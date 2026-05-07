@@ -1,0 +1,2471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0a1f3d">
+<title>FL Sign Ops · Field Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,700;0,6..96,900;1,6..96,700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<link href="https://fonts.cdnfonts.com/css/aptos" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.css"/>
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" defer></script>
+<style>
+  :root {
+    --navy: #0a1f3d;
+    --navy-2: #15315a;
+    --navy-3: #1f3d6b;
+    --gold: #c9a961;
+    --gold-2: #b08d3f;
+    --gold-soft: rgba(201,169,97,0.18);
+    --paper: #faf6ec;
+    --paper-2: #f0eadc;
+    --paper-3: #e6dfcb;
+    --ink: #15151a;
+    --ink-2: #4a4a52;
+    --ink-3: #80808a;
+    --rule: #d4cdb8;
+    --rule-soft: #e6dfcb;
+    --red: #a02828;
+    --red-soft: #f4dada;
+    --green: #2e7a44;
+    --green-soft: #dcefe0;
+    --orange: #d27a1f;
+    --orange-soft: #f8e3c2;
+    --tier-a: #a02828;
+    --tier-b: #c97432;
+    --tier-c: #2e6b6b;
+    --tier-d: #5a5a5a;
+    --shadow-1: 0 1px 2px rgba(10,31,61,0.06);
+    --shadow-2: 0 2px 8px rgba(10,31,61,0.08), 0 1px 2px rgba(10,31,61,0.04);
+    --shadow-3: 0 8px 24px rgba(10,31,61,0.14);
+    --r-sm: 4px;
+    --r-md: 8px;
+    --r-lg: 12px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: 'Aptos', 'Aptos Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: var(--paper);
+    background-image:
+      radial-gradient(circle at 0% 0%, rgba(201,169,97,0.05) 0%, transparent 50%),
+      radial-gradient(circle at 100% 100%, rgba(10,31,61,0.04) 0%, transparent 60%);
+    color: var(--ink);
+    font-size: 15px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    padding-bottom: 24px;
+  }
+
+  /* ==========================================================
+     HEADER (compact, single-row layout)
+     ========================================================== */
+  .app-header {
+    background: linear-gradient(180deg, var(--navy) 0%, var(--navy-2) 100%);
+    color: var(--paper);
+    border-bottom: 2px solid var(--gold);
+    position: sticky; top: 0; z-index: 50;
+    box-shadow: var(--shadow-2);
+  }
+  .header-inner {
+    padding: 8px 20px 0;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+  .h-row {
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    padding-bottom: 6px;
+  }
+  .brand-block {
+    display: flex; align-items: baseline; gap: 12px;
+    min-width: 0;
+    flex-wrap: wrap;
+    flex-grow: 1;
+  }
+  h1 {
+    font-family: 'Aptos', 'Aptos Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    font-weight: 700;
+    font-size: 22px;
+    margin: 0;
+    letter-spacing: -0.005em;
+    line-height: 1;
+    white-space: nowrap;
+    color: white;
+  }
+  h1 .accent { color: var(--gold); font-weight: 700; }
+
+  /* Inline KPI pills */
+  .kpis-inline {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .kpi-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 13px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(201,169,97,0.3);
+    border-radius: 99px;
+    font-size: 13px;
+    line-height: 1.3;
+  }
+  .kpi-pill .num {
+    font-family: 'Aptos', 'Aptos Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    font-weight: 700;
+    font-size: 16px;
+    color: var(--gold);
+    letter-spacing: -0.005em;
+  }
+  .kpi-pill .num.neg { color: #ff9090; }
+  .kpi-pill .denom {
+    font-family: 'Aptos', 'Aptos Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    font-size: 12px;
+    color: white;
+    opacity: 0.75;
+    font-weight: 500;
+  }
+  .kpi-pill .lbl {
+    font-family: 'Aptos', 'Aptos Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: white;
+    opacity: 0.85;
+    font-weight: 600;
+  }
+  .kpi-pill .mini-bar {
+    width: 36px;
+    height: 3px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 99px;
+    overflow: hidden;
+  }
+  .kpi-pill .mini-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--gold) 0%, var(--gold-2) 100%);
+    border-radius: 99px;
+    transition: width 0.3s ease;
+  }
+  .kpi-pill .mini-bar-fill.over { background: linear-gradient(90deg, #ff8585, #d65555); }
+
+  /* tab bar — sits flush with header bottom */
+  .tabs-row {
+    display: flex;
+    align-items: stretch;
+    margin-top: 0;
+    gap: 12px;
+    border-bottom: 0;
+  }
+  .tabs {
+    display: flex;
+    gap: 0;
+    flex-grow: 1;
+  }
+  .tab-btn {
+    padding: 9px 24px 11px;
+    background: transparent;
+    color: white;
+    border: none;
+    border-bottom: 3px solid transparent;
+    font-family: 'Aptos', 'Aptos Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    opacity: 0.7;
+    transition: opacity 0.15s, border-color 0.15s, background 0.15s;
+    margin-bottom: -3px;
+    position: relative;
+    font-weight: 600;
+  }
+  .tab-btn:hover { opacity: 1; background: rgba(255,255,255,0.05); }
+  .tab-btn.active {
+    opacity: 1;
+    border-bottom-color: var(--gold);
+    color: var(--gold);
+    font-weight: 700;
+  }
+  .tab-btn .count {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 1px 8px;
+    background: rgba(201,169,97,0.18);
+    color: var(--gold);
+    border-radius: 99px;
+    font-size: 10px;
+  }
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 6px;
+    position: relative;
+  }
+  .header-actions-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 13px;
+    background: transparent;
+    color: white;
+    border: 1.5px solid rgba(201,169,97,0.45);
+    border-radius: var(--r-sm);
+    font-family: 'Aptos', 'Aptos Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    font-size: 12.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-weight: 600;
+  }
+  .header-actions-trigger:hover {
+    background: rgba(201,169,97,0.1);
+    border-color: var(--gold);
+    color: var(--gold);
+  }
+  .header-actions-trigger.open { background: var(--gold); color: var(--navy); border-color: var(--gold); }
+  .header-actions-trigger:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+  .tab-btn:focus-visible { outline: 2px solid var(--gold); outline-offset: -2px; }
+  .header-actions-menu {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    background: white;
+    border: 1px solid var(--rule);
+    border-radius: var(--r-md);
+    box-shadow: var(--shadow-3);
+    padding: 6px;
+    min-width: 200px;
+    display: none;
+    z-index: 70;
+  }
+  .header-actions-menu.open { display: block; }
+  .header-actions-menu button {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 9px 12px;
+    background: transparent;
+    border: none;
+    color: var(--ink);
+    font-family: inherit;
+    font-size: 13px;
+    text-align: left;
+    cursor: pointer;
+    border-radius: var(--r-sm);
+    transition: background 0.12s;
+  }
+  .header-actions-menu button:hover { background: var(--paper-2); }
+  .header-actions-menu button .ico { font-size: 15px; width: 20px; text-align: center; }
+  .header-actions-menu .menu-divider { height: 1px; background: var(--rule-soft); margin: 4px 6px; }
+  .header-actions-menu .menu-label {
+    padding: 6px 12px 4px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--ink-3);
+    font-weight: 600;
+  }
+
+  .tab-pane { display: none; }
+  .tab-pane.active { display: block; }
+
+  /* ==========================================================
+     FILTERS — search + collapsible filter drawer
+     ========================================================== */
+  .filters {
+    background: var(--paper-2);
+    border-bottom: 1px solid var(--rule);
+    position: sticky;
+    z-index: 40;
+    top: var(--header-h, 80px);
+  }
+  .filters-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 8px 20px;
+  }
+  .filter-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .search-wrap {
+    position: relative;
+    flex-grow: 1;
+  }
+  .search-wrap::before {
+    content: '⌕';
+    position: absolute;
+    left: 12px; top: 50%;
+    transform: translateY(-50%);
+    color: var(--ink-3);
+    font-size: 15px;
+    pointer-events: none;
+  }
+  .search {
+    width: 100%;
+    padding: 8px 12px 8px 34px;
+    background: var(--paper);
+    border: 1.5px solid var(--rule);
+    border-radius: var(--r-md);
+    font-family: inherit;
+    /* 16px on inputs prevents iOS Safari zoom-on-focus */
+    font-size: 16px;
+    color: var(--ink);
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .search:focus {
+    outline: none;
+    border-color: var(--gold);
+    box-shadow: 0 0 0 3px var(--gold-soft);
+  }
+  .filter-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 13px;
+    background: var(--paper);
+    color: var(--ink-2);
+    border: 1.5px solid var(--rule);
+    border-radius: var(--r-md);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .filter-toggle:hover { border-color: var(--gold-2); color: var(--ink); }
+  .filter-toggle:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+  .filter-toggle.has-active {
+    background: var(--gold-soft);
+    border-color: var(--gold-2);
+    color: var(--ink);
+  }
+  .filter-toggle .badge {
+    display: inline-block;
+    min-width: 16px;
+    padding: 1px 6px;
+    background: var(--gold);
+    color: var(--navy);
+    border-radius: 99px;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1.4;
+    text-align: center;
+  }
+  .filter-toggle .chev {
+    font-size: 9px;
+    transition: transform 0.2s;
+  }
+  .filter-toggle.open .chev { transform: rotate(180deg); }
+
+  .filter-drawer {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.25s ease;
+  }
+  .filter-drawer.open {
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+  .filter-drawer-inner {
+    padding-top: 10px;
+    padding-bottom: 4px;
+  }
+  .filter-row { margin-bottom: 8px; }
+  .filter-row:last-child { margin-bottom: 0; }
+  .filter-row-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--ink-3);
+    margin-bottom: 5px;
+    font-weight: 600;
+  }
+
+  .pill-group {
+    display: flex; gap: 6px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 2px;
+    scrollbar-width: thin;
+    flex-wrap: wrap;
+  }
+  .pill-group::-webkit-scrollbar { height: 4px; }
+  .pill-group::-webkit-scrollbar-thumb { background: var(--rule); border-radius: 99px; }
+  .pill {
+    flex-shrink: 0;
+    padding: 6px 12px;
+    background: var(--paper);
+    border: 1.5px solid var(--rule);
+    border-radius: 99px;
+    font-size: 11.5px;
+    font-family: 'IBM Plex Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--ink-2);
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.15s;
+    -webkit-tap-highlight-color: transparent;
+    white-space: nowrap;
+  }
+  .pill:hover { border-color: var(--gold-2); color: var(--ink); }
+  .pill:focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: 2px;
+    border-color: var(--gold);
+  }
+  .pill.active {
+    background: var(--navy);
+    color: var(--paper);
+    border-color: var(--navy);
+  }
+  .pill.tier-a.active { background: var(--tier-a); border-color: var(--tier-a); }
+  .pill.tier-b.active { background: var(--tier-b); border-color: var(--tier-b); }
+  .pill.tier-c.active { background: var(--tier-c); border-color: var(--tier-c); }
+  .pill.tier-d.active { background: var(--tier-d); border-color: var(--tier-d); }
+  .pill[data-val="green"].active  { background: var(--green); border-color: var(--green); color: white; }
+  .pill[data-val="orange"].active { background: var(--orange); border-color: var(--orange); color: white; }
+  .pill[data-val="white"].active  { background: white; border-color: var(--ink); color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
+
+  .meta-row {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 12px 20px 4px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--ink-3);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .meta-row b { color: var(--ink-2); font-weight: 600; }
+  .meta-row .pills-summary { display: flex; gap: 10px; align-items: center; }
+  .meta-row .dot-wrap { display: inline-flex; align-items: center; gap: 4px; }
+
+  /* ==========================================================
+     CARDS
+     ========================================================== */
+  .list {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 8px 20px 20px;
+  }
+  .card {
+    background: white;
+    border: 1px solid var(--rule);
+    border-radius: var(--r-md);
+    margin-bottom: 10px;
+    overflow: hidden;
+    box-shadow: var(--shadow-1);
+    transition: box-shadow 0.15s, transform 0.15s, border-color 0.15s;
+    position: relative;
+  }
+  .card:hover { box-shadow: var(--shadow-2); border-color: var(--rule); }
+  .card.open { box-shadow: var(--shadow-2); border-color: var(--gold); }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 5px;
+  }
+  .card.color-green::before { background: linear-gradient(180deg, var(--green) 0%, #1f5c30 100%); }
+  .card.color-orange::before { background: linear-gradient(180deg, var(--orange) 0%, #a55a13 100%); }
+  .card.color-white::before { background: var(--paper-3); }
+
+  .card-head {
+    padding: 14px 16px 14px 22px;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 10px;
+    align-items: start;
+  }
+  .card-head:focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: -2px;
+  }
+  /* Textual status — accompanies the color stripe so the meaning survives in print
+     and is announced by screen readers (color alone fails WCAG 1.4.1). */
+  .status-text {
+    display: inline-block;
+    margin-left: 6px;
+    padding: 2px 8px;
+    border-radius: 99px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9.5px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    border: 1px solid currentColor;
+    /* keep visible in printed output */
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .status-text.green  { color: #1f5c30; background: var(--green-soft); }
+  .status-text.orange { color: #a55a13; background: var(--orange-soft); }
+  .status-text.white  { color: var(--ink-2); background: white; }
+  .card-top-l { min-width: 0; }
+  .card-top-r { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .county-row {
+    display: flex; align-items: baseline; gap: 8px;
+    margin-bottom: 6px;
+  }
+  .county-name {
+    font-family: 'Bodoni Moda', serif;
+    font-weight: 700;
+    font-size: 20px;
+    color: var(--navy);
+    line-height: 1.1;
+    letter-spacing: -0.005em;
+  }
+  .color-dot {
+    display: inline-block; width: 10px; height: 10px; border-radius: 50%;
+    margin-right: 4px; vertical-align: 0px;
+    border: 1.5px solid;
+    flex-shrink: 0;
+  }
+  .color-dot.green { background: var(--green); border-color: var(--green); }
+  .color-dot.orange { background: var(--orange); border-color: var(--orange); }
+  .color-dot.white { background: white; border-color: var(--ink-2); }
+  .tier-badge {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    padding: 3px 9px;
+    border-radius: var(--r-sm);
+    color: white;
+    line-height: 1.4;
+  }
+  .tier-badge.A { background: var(--tier-a); }
+  .tier-badge.B { background: var(--tier-b); }
+  .tier-badge.C { background: var(--tier-c); }
+  .tier-badge.D { background: var(--tier-d); }
+  .note-badge {
+    background: var(--gold);
+    color: var(--navy);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 99px;
+  }
+  .chevron {
+    color: var(--ink-3);
+    font-size: 14px;
+    transition: transform 0.2s;
+    width: 16px;
+    text-align: center;
+  }
+  .card.open .chevron { transform: rotate(90deg); color: var(--gold-2); }
+
+  .card-meta {
+    font-size: 13px;
+    color: var(--ink-2);
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .meta-stat {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 5px;
+  }
+  .meta-stat .lbl {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--ink-3);
+  }
+
+  /* Inline goal editor — looks like editable value, not form field */
+  .goal-edit {
+    display: inline-flex;
+    align-items: baseline;
+    background: transparent;
+    border: 1.5px solid transparent;
+    padding: 1px 4px;
+    border-radius: 4px;
+    transition: background 0.15s, border-color 0.15s;
+    cursor: text;
+  }
+  /* Subtle hover hint — outline only, no fill */
+  .goal-edit:hover { border-color: var(--rule); }
+  /* Modified state is distinct — gold-tinted fill + solid gold border */
+  .goal-edit.modified {
+    background: var(--gold-soft);
+    border-color: var(--gold-2);
+  }
+  .goal-edit.modified:hover { border-color: var(--gold); }
+  .goal-input {
+    width: 64px;
+    padding: 2px 4px 2px 6px;
+    background: transparent;
+    border: none;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--ink);
+    text-align: left;
+    appearance: auto;
+  }
+  .goal-input::-webkit-inner-spin-button,
+  .goal-input::-webkit-outer-spin-button {
+    opacity: 1;
+    margin-left: 6px;
+    height: 18px;
+  }
+  .goal-input:focus { outline: none; }
+  .goal-edit:focus-within {
+    background: white;
+    border-color: var(--gold);
+  }
+  .goal-reset {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--paper-2);
+    border: 1px solid var(--rule);
+    color: var(--ink-2);
+    cursor: pointer;
+    font-size: 13px;
+    padding: 0;
+    /* WCAG 2.5.5 minimum 24×24 hit target */
+    width: 26px;
+    height: 26px;
+    border-radius: 99px;
+    line-height: 1;
+    transition: all 0.15s;
+  }
+  .goal-reset:hover {
+    background: var(--red);
+    border-color: var(--red);
+    color: white;
+  }
+  .goal-reset:focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: 2px;
+  }
+
+  .signs-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    background: var(--green-soft);
+    color: var(--green);
+    border-radius: 99px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .signs-tag::before { content: '🚩'; font-size: 11px; }
+
+  /* expanded body */
+  .card-body {
+    display: none;
+    padding: 4px 22px 18px;
+    background: linear-gradient(180deg, var(--paper-2) 0%, var(--paper) 100%);
+    border-top: 1px solid var(--rule-soft);
+  }
+  .card.open .card-body { display: block; }
+
+  .body-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 14px;
+    padding-top: 14px;
+  }
+  @media (min-width: 720px) {
+    .body-grid { grid-template-columns: 1fr 1fr; }
+    .body-grid .span-2 { grid-column: 1 / -1; }
+  }
+
+  .panel {
+    background: white;
+    border: 1px solid var(--rule);
+    border-radius: var(--r-md);
+    padding: 12px 14px;
+    box-shadow: var(--shadow-1);
+  }
+  .panel-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--ink-3);
+    margin: 0 0 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .panel-title .count {
+    color: var(--gold-2);
+    font-weight: 700;
+  }
+  .detail-section { margin-bottom: 10px; }
+  .detail-section:last-child { margin-bottom: 0; }
+  .detail-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--ink-3);
+    margin-bottom: 3px;
+  }
+  .detail-val { font-size: 14px; color: var(--ink); line-height: 1.5; }
+  .detail-val a { color: var(--navy-2); text-decoration: none; border-bottom: 1px dotted var(--navy-2); }
+  .detail-val a:hover { color: var(--gold-2); border-bottom-color: var(--gold-2); }
+  .contact-actions {
+    display: flex;
+    gap: 6px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 14px;
+    background: var(--navy);
+    color: var(--paper);
+    text-decoration: none;
+    border-radius: var(--r-sm);
+    font-size: 12px;
+    font-family: 'IBM Plex Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    border: 1px solid var(--navy);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    font-weight: 600;
+    transition: all 0.15s;
+    line-height: 1.3;
+  }
+  .btn:hover { background: var(--navy-2); transform: translateY(-1px); box-shadow: var(--shadow-1); }
+  .btn:active { transform: translateY(0); }
+  .btn:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+  .btn.gold { background: var(--gold); color: var(--navy); border-color: var(--gold); }
+  .btn.gold:hover { background: var(--gold-2); border-color: var(--gold-2); }
+  .btn.ghost { background: transparent; color: var(--navy); border: 1.5px solid var(--navy); }
+  .btn.ghost:hover { background: var(--navy); color: var(--paper); }
+  .btn.danger { background: var(--red); border-color: var(--red); color: white; }
+  .btn.sm { padding: 5px 10px; font-size: 10.5px; }
+
+  /* signs */
+  .sign-list { margin: 6px 0 8px; }
+  .sign-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 10px;
+    background: var(--paper);
+    border: 1px solid var(--rule-soft);
+    border-left: 3px solid var(--gold);
+    margin-bottom: 5px;
+    border-radius: var(--r-sm);
+    font-size: 13px;
+  }
+  .sign-item.placed { border-left-color: var(--green); }
+  .sign-item.scheduled { border-left-color: var(--orange); }
+  .sign-status {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 2px 7px;
+    border-radius: 99px;
+    background: var(--ink-2);
+    color: white;
+    flex-shrink: 0;
+    font-weight: 600;
+  }
+  .sign-status.placed { background: var(--green); }
+  .sign-status.scheduled { background: var(--orange); }
+  .sign-meta { flex-grow: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12.5px; }
+  .sign-meta .date { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--ink-3); margin-right: 6px; }
+  .sign-del, .note-del {
+    background: none; border: none; color: var(--ink-3);
+    cursor: pointer; font-size: 16px; padding: 2px 6px;
+    border-radius: var(--r-sm);
+    transition: all 0.15s;
+    line-height: 1;
+  }
+  .sign-del:hover, .note-del:hover { color: var(--red); background: var(--red-soft); }
+
+  /* inline forms inside panel */
+  .inline-form {
+    margin-top: 8px;
+    padding: 10px;
+    background: var(--paper-2);
+    border: 1px dashed var(--rule);
+    border-radius: var(--r-sm);
+    display: none;
+  }
+  .inline-form.open { display: block; }
+  .inline-form.always-show { display: block; }
+  .inline-form label {
+    display: block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--ink-3);
+    margin-bottom: 4px;
+    margin-top: 8px;
+    font-weight: 600;
+  }
+  .inline-form label:first-child { margin-top: 0; }
+  .inline-form select,
+  .inline-form input,
+  .inline-form textarea {
+    width: 100%;
+    padding: 8px 10px;
+    background: white;
+    border: 1.5px solid var(--rule);
+    border-radius: var(--r-sm);
+    font-family: inherit;
+    /* 16px to prevent iOS Safari zoom-on-focus */
+    font-size: 16px;
+    color: var(--ink);
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .inline-form textarea { resize: vertical; min-height: 64px; line-height: 1.45; }
+  .inline-form select:focus,
+  .inline-form input:focus,
+  .inline-form textarea:focus {
+    outline: none;
+    border-color: var(--gold);
+    box-shadow: 0 0 0 3px var(--gold-soft);
+  }
+  .inline-form .form-actions { margin-top: 10px; display: flex; gap: 6px; }
+
+  /* notes */
+  .note-item {
+    background: var(--paper);
+    border: 1px solid var(--rule-soft);
+    border-left: 3px solid var(--gold);
+    padding: 8px 11px;
+    margin-bottom: 6px;
+    border-radius: var(--r-sm);
+    font-size: 13px;
+  }
+  .note-item .ts {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9.5px;
+    color: var(--ink-3);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .note-item .body { margin-top: 5px; line-height: 1.5; white-space: pre-wrap; color: var(--ink); }
+  .note-item .action {
+    margin-top: 6px;
+    padding: 5px 8px;
+    background: var(--green-soft);
+    color: #1f5c30;
+    border-radius: var(--r-sm);
+    font-size: 12.5px;
+    font-weight: 500;
+  }
+  .note-item .action::before { content: '▸ '; color: var(--green); font-weight: 700; }
+
+  .empty-mini {
+    color: var(--ink-3);
+    font-size: 12px;
+    font-style: italic;
+    padding: 4px 0;
+  }
+
+  /* ==========================================================
+     TOAST
+     ========================================================== */
+  .toast {
+    position: fixed;
+    bottom: 28px;
+    left: 50%;
+    transform: translateX(-50%) translateY(8px);
+    background: var(--navy);
+    color: var(--gold);
+    padding: 11px 18px;
+    border-radius: 99px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    z-index: 200;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s, transform 0.2s;
+    border: 1.5px solid var(--gold);
+    box-shadow: var(--shadow-3);
+    font-weight: 600;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  .empty {
+    text-align: center;
+    color: var(--ink-3);
+    font-size: 14px;
+    padding: 60px 20px;
+    font-style: italic;
+  }
+
+  /* ==========================================================
+     MAP TAB
+     ========================================================== */
+  #map-tab { padding: 0; position: relative; }
+  #map { width: 100%; min-height: 500px; height: calc(100vh - var(--header-h, 220px) - 24px); }
+  .map-controls {
+    position: absolute;
+    top: 16px; right: 16px;
+    z-index: 1000;
+    background: white;
+    border: 1px solid var(--rule);
+    border-radius: var(--r-md);
+    padding: 12px 14px;
+    box-shadow: var(--shadow-2);
+    font-size: 12px;
+    min-width: 180px;
+  }
+  .map-controls-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--ink-3);
+    margin-bottom: 8px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--rule-soft);
+    font-weight: 600;
+  }
+  .map-controls label {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-bottom: 6px;
+    cursor: pointer;
+    font-size: 12.5px;
+    color: var(--ink);
+    user-select: none;
+  }
+  .map-controls label:hover { color: var(--gold-2); }
+  .map-controls input[type="checkbox"] { margin: 0; }
+  .map-controls .swatch {
+    display: inline-block;
+    width: 10px; height: 10px; border-radius: 50%;
+    margin-right: 2px;
+    border: 1.5px solid;
+  }
+  .map-controls .swatch.green { background: var(--green); border-color: var(--green); }
+  .map-controls .swatch.orange { background: var(--orange); border-color: var(--orange); }
+  .map-controls .swatch.white { background: white; border-color: var(--ink-2); }
+  .map-controls .divider { border-top: 1px solid var(--rule-soft); margin: 8px 0 6px; }
+  .map-controls button {
+    display: block;
+    width: 100%;
+    margin-top: 5px;
+    padding: 7px 10px;
+    background: var(--navy);
+    color: var(--paper);
+    border: 1px solid var(--navy);
+    border-radius: var(--r-sm);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.15s;
+  }
+  .map-controls button:hover { background: var(--gold); border-color: var(--gold); color: var(--navy); }
+  #map-iframe-overlay {
+    display: none;
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    z-index: 1100;
+    background: var(--paper);
+    flex-direction: column;
+  }
+  #map-iframe-overlay.open { display: flex; }
+  #map-iframe-header {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    background: linear-gradient(180deg, var(--navy) 0%, var(--navy-2) 100%);
+    border-bottom: 2px solid var(--gold);
+    box-shadow: var(--shadow-2);
+    z-index: 1;
+  }
+  #map-iframe-title {
+    font-family: 'Aptos', 'Aptos Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    font-size: 13px;
+    color: var(--gold);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-weight: 700;
+  }
+  #map-iframe-overlay iframe {
+    flex-grow: 1;
+    width: 100%;
+    border: none;
+    min-height: 0;
+  }
+  #map-iframe-close {
+    background: transparent;
+    color: var(--gold);
+    border: 1.5px solid var(--gold);
+    border-radius: 99px;
+    padding: 6px 16px;
+    font-family: 'Aptos', 'Aptos Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.15s;
+  }
+  #map-iframe-close:hover { background: var(--gold); color: var(--navy); }
+
+  /* Static legend overlay on the map */
+  .map-legend {
+    position: absolute;
+    bottom: 24px;
+    left: 16px;
+    z-index: 999;
+    background: rgba(255,255,255,0.96);
+    border: 1px solid var(--rule);
+    border-radius: var(--r-md);
+    padding: 8px 11px;
+    box-shadow: var(--shadow-2);
+    font-size: 11.5px;
+    line-height: 1.7;
+    color: var(--ink);
+    font-family: 'Aptos','Segoe UI',system-ui,sans-serif;
+  }
+  .map-legend .legend-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--ink-3);
+    margin-bottom: 4px;
+    font-weight: 600;
+  }
+  .map-legend .legend-row { display: flex; align-items: center; gap: 6px; }
+  .map-legend .legend-dot {
+    display: inline-block; width: 10px; height: 10px; border-radius: 50%;
+    border: 1.5px solid #15151a;
+  }
+  .map-legend .legend-dot.green { background: var(--green); }
+  .map-legend .legend-dot.orange { background: var(--orange); }
+  .map-legend .legend-dot.white { background: white; }
+  .leaflet-popup-content button.popup-jump {
+    margin-top: 8px;
+    padding: 6px 10px;
+    background: var(--gold);
+    color: var(--navy);
+    border: none;
+    border-radius: 4px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+  }
+  .leaflet-popup-content button.popup-jump:hover { background: var(--gold-2); }
+
+  /* Audit-trail panel */
+  .audit-panel { background: var(--paper); border-left: 3px solid var(--gold-2); }
+  .audit-list { margin: 6px 0 0; padding: 0; list-style: none; }
+  .audit-item {
+    padding: 6px 0;
+    border-bottom: 1px dashed var(--rule-soft);
+    font-size: 12.5px;
+  }
+  .audit-item:last-child { border-bottom: none; }
+  .audit-item .a-row {
+    display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap;
+  }
+  .audit-item .a-date {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--ink-3);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .audit-item .a-field {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    background: var(--gold-soft);
+    padding: 1px 6px;
+    border-radius: 3px;
+    color: var(--ink);
+  }
+  .audit-item .a-old { color: var(--ink-3); text-decoration: line-through; }
+  .audit-item .a-new { color: var(--ink); font-weight: 500; }
+  .audit-item .a-src { font-size: 11px; }
+  .audit-item .a-src a { color: var(--navy-2); }
+
+  .leaflet-popup-content {
+    font-family: 'Aptos', 'Aptos Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .leaflet-popup-content b {
+    font-family: 'Bodoni Moda', serif;
+    font-size: 15px;
+    color: var(--navy);
+  }
+  .leaflet-popup-content-wrapper { border-radius: var(--r-md); }
+
+  @media (min-width: 720px) {
+    body { padding-bottom: 24px; }
+    h1 { font-size: 22px; }
+    .kpi-pill .num { font-size: 16px; }
+  }
+
+  /* ==========================================================
+     PRINT
+     ========================================================== */
+  @media print {
+    body { padding: 0; background: white; color: black; }
+    .app-header, .filters, .toast, #map-tab,
+    .goal-reset, .inline-form, [data-action="add-sign-toggle"],
+    .chevron, .meta-row .pills-summary, .note-del, .sign-del { display: none !important; }
+    .meta-row { padding: 4px 8px; border-bottom: 1px solid #888; }
+    .card { break-inside: avoid; page-break-inside: avoid; border: 1px solid #888; margin-bottom: 6px; box-shadow: none; }
+    /* Keep color stripe in printout — sole pre-fix indicator of status; supplemented by .status-text */
+    .card::before {
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    .card-body { display: block !important; background: white; padding: 6px 10px; }
+    .card-head { background: white !important; cursor: default; }
+    .tier-badge, .status-text, .note-badge, .signs-tag {
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    .panel { box-shadow: none; border: 1px solid #ccc; padding: 6px 8px; }
+    .list { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; max-width: none; padding: 6px; }
+    .body-grid { display: block; }
+    .body-grid > * + * { margin-top: 4px; }
+    .btn { background: white !important; color: black !important; border: 1px solid #888 !important; padding: 2px 6px !important; font-size: 10px !important; }
+    .goal-edit { background: transparent; border-bottom: none; }
+    .goal-input { font-weight: 700; }
+    .note-item { orphans: 3; widows: 3; }
+    @page { margin: 0.4in; }
+  }
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="header-inner">
+    <div class="h-row">
+      <div class="brand-block">
+        <h1>Florida <span class="accent">Sign Ops</span></h1>
+        <div class="kpis-inline">
+          <span class="kpi-pill" title="Counties tracked">
+            <span class="num" id="st-counties">67</span>
+            <span class="lbl">Counties</span>
+          </span>
+          <span class="kpi-pill" title="Yard sign inventory remaining">
+            <span class="num" id="st-yard-rem">0</span>
+            <span class="denom" id="st-yard-denom">/ 2,000</span>
+            <span class="lbl">Yard</span>
+            <span class="mini-bar"><span class="mini-bar-fill" id="st-yard-bar" style="width:0%"></span></span>
+          </span>
+          <span class="kpi-pill" title="4×8 sign inventory remaining">
+            <span class="num" id="st-four-rem">0</span>
+            <span class="denom" id="st-four-denom">/ 250</span>
+            <span class="lbl">4×8</span>
+            <span class="mini-bar"><span class="mini-bar-fill" id="st-four-bar" style="width:0%"></span></span>
+          </span>
+        </div>
+      </div>
+    </div>
+    <div class="tabs-row">
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="field">Field Ops</button>
+        <button class="tab-btn" data-tab="map">Map</button>
+      </div>
+      <div class="header-actions">
+        <button class="header-actions-trigger" id="export-trigger" aria-haspopup="true" aria-expanded="false" aria-controls="export-menu">
+          <span>Export</span>
+          <span style="font-size:9px;">▾</span>
+        </button>
+        <div class="header-actions-menu" id="export-menu" role="menu">
+          <div class="menu-label">Output</div>
+          <button id="btn-print"><span class="ico" aria-hidden="true">🖨</span> Print this view</button>
+          <div class="menu-divider"></div>
+          <div class="menu-label">Download</div>
+          <button id="btn-excel"><span class="ico" aria-hidden="true">📊</span> Excel workbook (.xlsx)</button>
+          <button id="btn-ical"><span class="ico" aria-hidden="true">📅</span> Calendar (.ics)</button>
+          <div class="menu-divider"></div>
+          <div class="menu-label">Backup</div>
+          <button id="btn-backup"><span class="ico" aria-hidden="true">💾</span> Backup state (.json)</button>
+          <button id="btn-restore"><span class="ico" aria-hidden="true">📥</span> Restore state (.json)</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<section id="field-tab" class="tab-pane active">
+  <div class="filters">
+    <div class="filters-inner">
+      <div class="filter-bar">
+        <div class="search-wrap">
+          <input class="search" id="search" type="search" placeholder="Search county or chair…" autocomplete="off">
+        </div>
+        <button class="filter-toggle" id="filter-toggle" aria-expanded="false" aria-controls="filter-drawer">
+          <span>Filters</span>
+          <span class="badge" id="filter-badge" style="display:none;">0</span>
+          <span class="chev">▾</span>
+        </button>
+      </div>
+      <div class="filter-drawer" id="filter-drawer">
+        <div class="filter-drawer-inner">
+          <div class="filter-row">
+            <div class="filter-row-label" id="lbl-tier">Tier</div>
+            <div class="pill-group" id="tier-pills" role="group" aria-labelledby="lbl-tier">
+              <button type="button" class="pill active" data-filter="tier" data-val="all" aria-pressed="true">All Tiers</button>
+              <button type="button" class="pill tier-a" data-filter="tier" data-val="A" aria-pressed="false">Tier A</button>
+              <button type="button" class="pill tier-b" data-filter="tier" data-val="B" aria-pressed="false">Tier B</button>
+              <button type="button" class="pill tier-c" data-filter="tier" data-val="C" aria-pressed="false">Tier C</button>
+              <button type="button" class="pill tier-d" data-filter="tier" data-val="D" aria-pressed="false">Tier D</button>
+            </div>
+          </div>
+          <div class="filter-row">
+            <div class="filter-row-label" id="lbl-status">Status</div>
+            <div class="pill-group" id="color-pills" role="group" aria-labelledby="lbl-status">
+              <button type="button" class="pill" data-filter="color" data-val="green" aria-pressed="false"><span aria-hidden="true">🟢</span> Will Take</button>
+              <button type="button" class="pill" data-filter="color" data-val="orange" aria-pressed="false"><span aria-hidden="true">🟠</span> No HQ</button>
+              <button type="button" class="pill" data-filter="color" data-val="white" aria-pressed="false"><span aria-hidden="true">⚪</span> No Chair Contact</button>
+            </div>
+          </div>
+          <div class="filter-row">
+            <div class="filter-row-label" id="lbl-region">Region</div>
+            <div class="pill-group" id="region-pills" role="group" aria-labelledby="lbl-region">
+              <button type="button" class="pill" data-filter="region" data-val="Northeast" aria-pressed="false">Northeast</button>
+              <button type="button" class="pill" data-filter="region" data-val="North Central" aria-pressed="false">North Central</button>
+              <button type="button" class="pill" data-filter="region" data-val="Central East" aria-pressed="false">Central East</button>
+              <button type="button" class="pill" data-filter="region" data-val="Central West" aria-pressed="false">Central West</button>
+              <button type="button" class="pill" data-filter="region" data-val="Southwest" aria-pressed="false">Southwest</button>
+              <button type="button" class="pill" data-filter="region" data-val="Southeast" aria-pressed="false">Southeast</button>
+              <button type="button" class="pill" data-filter="region" data-val="Panhandle" aria-pressed="false">Panhandle</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="meta-row">
+    <span id="result-count">67 counties</span>
+    <span class="pills-summary" id="signs-summary"></span>
+  </div>
+
+  <div class="list" id="list"></div>
+</section>
+
+<section id="map-tab" class="tab-pane">
+  <div id="map"></div>
+  <div class="map-legend" aria-label="Map legend">
+    <div class="legend-title">Status</div>
+    <div class="legend-row"><span class="legend-dot green" aria-hidden="true"></span>Will Take</div>
+    <div class="legend-row"><span class="legend-dot orange" aria-hidden="true"></span>No HQ</div>
+    <div class="legend-row"><span class="legend-dot white" aria-hidden="true"></span>No Chair Contact</div>
+    <div class="legend-title" style="margin-top:6px;">4×8 Signs</div>
+    <div class="legend-row"><span aria-hidden="true">📍</span>Scheduled</div>
+    <div class="legend-row"><span aria-hidden="true">🚩</span>Placed</div>
+  </div>
+  <div class="map-controls" id="map-controls">
+    <div class="map-controls-title">Layers</div>
+    <label><input type="checkbox" id="lyr-counties" checked> <span class="swatch green"></span><span class="swatch orange"></span><span class="swatch white"></span> Counties</label>
+    <label><input type="checkbox" id="lyr-scheduled" checked> 📍 Scheduled 4×8</label>
+    <label><input type="checkbox" id="lyr-placed" checked> 🚩 Placed 4×8</label>
+    <div class="divider"></div>
+    <div class="map-controls-title">Source Maps</div>
+    <button id="open-candidate-map">Candidate Map</button>
+    <button id="open-status-map">Status Map</button>
+  </div>
+  <div id="map-iframe-overlay">
+    <div id="map-iframe-header">
+      <span id="map-iframe-title">Source Map</span>
+      <button id="map-iframe-close" type="button">× Close</button>
+    </div>
+    <iframe id="map-iframe" src=""></iframe>
+  </div>
+</section>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<input type="file" id="restore-file-input" accept=".json,application/json" style="display:none" aria-hidden="true">
+
+<script>
+const COUNTIES = [{"county": "Brevard", "tier": "A", "wave": "Wave 1", "gop_voters": "201095", "gop_share": "0.4649", "yard_goal": "130", "four_x_eight_goal": "12", "chair": "John Dittmore", "chair_email": "brevardchairman@gmail.com", "chair_phone": "321-917-7029", "delivery_contact": "Brevard REC Office / John Dittmore", "delivery_phone": "321-254-0073", "delivery_email": "info@brevardrepublicans.org", "rec_email": "info@brevardrepublicans.org", "rec_website": "http://www.brevardrepublicans.org/", "meeting_location": "Space Coast Association of REALTORS, 2950 Pineda Plaza Way, Palm Shores, FL 32940; 2nd Thursday every other month", "region": "Central East - Brevard/Space Coast Hub", "status": "partial_with_delivery", "followup": "", "last_update": "2026-05-01", "update_source": "florida.gop + Master Directory (2026-04-23) + Web research scrape 2026-05-01", "region_group": "Central East", "field_updates": [{"field": "chair_phone", "old": "", "new": "321-917-7029", "source": "https://spacecoastdaily.com/2025/11/dittmore-takes-helm-of-brevard-gop-gattle-wins-state-committeeman-seat-after-fine-resigns/", "date": "2026-05-01"}], "color": "orange", "lat": 28.2639, "lng": -80.7214}, {"county": "Broward", "tier": "A", "wave": "Wave 1", "gop_voters": "268516", "gop_share": "0.2493", "yard_goal": "154", "four_x_eight_goal": "14", "chair": "Chris Marino", "chair_email": "browardgop@gmail.com", "chair_phone": "", "delivery_contact": "Broward GOP Office / Chris Marino", "delivery_phone": "954-941-7775", "delivery_email": "browardgop@gmail.com", "rec_email": "browardgop@gmail.com", "rec_website": "https://browardgop.com/", "meeting_location": "E. Pat Larkins Community Center, 520 NW 3rd St, Pompano Beach, FL 33060; monthly at 7:00 PM", "region": "Southeast - Broward/Palm Beach Hub", "status": "partial_with_delivery", "followup": "Awaiting State Committeewoman response re: HQ. Re-contact 2026-05-03 if no reply.", "last_update": "2026-05-01", "update_source": "Field call 2026-04-28 + Web research scrape 2026-05-01", "region_group": "Southeast", "field_updates": [{"field": "meeting_location", "old": "See Broward GOP website for current meeting location", "new": "E. Pat Larkins Community Center, 520 NW 3rd St, Pompano Beach, FL 33060; monthly at 7:00 PM", "source": "https://browardgop.com/next-meeting/", "date": "2026-05-01"}], "color": "orange", "lat": 26.1901, "lng": -80.3659}, {"county": "Duval", "tier": "A", "wave": "Wave 1", "gop_voters": "235284", "gop_share": "0.3673", "yard_goal": "142", "four_x_eight_goal": "14", "chair": "Charles Barr", "chair_email": "Chairman@duval.gop", "chair_phone": "904-626-9124", "delivery_contact": "John Scott (delivery agent → Duval HQ)", "delivery_phone": "904-626-9124", "delivery_email": "chairman@rpdc.org", "rec_email": "Chairman@duval.gop", "rec_website": "https://www.duval.gop/", "meeting_location": "Salem Center, 7235 Bentley Road, Jacksonville, FL 32256", "region": "Northeast - Jacksonville Hub", "status": "chair_complete", "followup": "Get John Scott direct phone for drop coordination.", "last_update": "2026-04-28", "update_source": "Field call 2026-04-28", "region_group": "Northeast", "color": "green", "lat": 30.3322, "lng": -81.6557}, {"county": "Hillsborough", "tier": "A", "wave": "Wave 1", "gop_voters": "293837", "gop_share": "0.3598", "yard_goal": "164", "four_x_eight_goal": "14", "chair": "Carmen Edmonds", "chair_email": "chairman@hillsborough.gop", "chair_phone": "813-621-7909", "delivery_contact": "Carmen Edmonds", "delivery_phone": "813-621-7909", "delivery_email": "chairman@hillsborough.gop", "rec_email": "info@hillsborough.gop", "rec_website": "https://www.hillsborough.gop/", "meeting_location": "Egypt Shriners, 5017 E Washington St, Tampa, FL 33619", "region": "Central West - Tampa Bay Hub", "status": "chair_complete", "followup": "", "last_update": "2026-04-26", "update_source": "florida.gop + hillsborough.gop", "region_group": "Central West", "color": "green", "lat": 27.9061, "lng": -82.3018}, {"county": "Lee", "tier": "A", "wave": "Wave 1", "gop_voters": "244029", "gop_share": "0.4936", "yard_goal": "146", "four_x_eight_goal": "14", "chair": "Mercedes Price Harry", "chair_email": "mercedes@leegop.org", "chair_phone": "239-936-8779", "delivery_contact": "Mercedes Price Harry", "delivery_phone": "239-936-8779", "delivery_email": "mercedes@leegop.org", "rec_email": "chair@leegop.org", "rec_website": "https://www.leegop.org/", "meeting_location": "Word of Life Church, 6111 South Pointe Blvd, Fort Myers, FL 33907", "region": "Southwest - Fort Myers Hub", "status": "chair_complete", "followup": "", "last_update": "2026-04-26", "update_source": "florida.gop + Master Directory", "region_group": "Southwest", "color": "green", "lat": 26.5535, "lng": -81.8571}, {"county": "Miami-Dade", "tier": "A", "wave": "Wave 1", "gop_voters": "451667", "gop_share": "0.352", "yard_goal": "220", "four_x_eight_goal": "18", "chair": "Kevin J. Cooper", "chair_email": "kjcooper@miamidadegop.org", "chair_phone": "786-572-8815", "delivery_contact": "Kevin J. Cooper", "delivery_phone": "786-572-8815", "delivery_email": "kjcooper@miamidadegop.org", "rec_email": "info@miamidadegop.org", "rec_website": "https://www.miamidadegop.org/", "meeting_location": "Meeting date and location vary; email info@miamidadegop.org", "region": "Southeast - Miami Hub", "status": "chair_complete", "followup": "", "last_update": "", "update_source": "", "region_group": "Southeast", "color": "green", "lat": 25.608, "lng": -80.5589}, {"county": "Orange", "tier": "A", "wave": "Wave 1", "gop_voters": "225115", "gop_share": "0.2774", "yard_goal": "139", "four_x_eight_goal": "14", "chair": "Erin Huntley", "chair_email": "chair@orangefl.gop", "chair_phone": "321-209-3787", "delivery_contact": "Erin Huntley", "delivery_phone": "321-209-3787", "delivery_email": "chair@orangefl.gop", "rec_email": "chair@orangefl.gop", "rec_website": "https://orangefl.gop/", "meeting_location": "Monthly; typically 3rd Thursday - see OrangeFL.gop calendar for current location", "region": "Central East - Orlando Hub", "status": "chair_complete", "followup": "", "last_update": "", "update_source": "", "region_group": "Central East", "color": "green", "lat": 28.5317, "lng": -81.3784}, {"county": "Palm Beach", "tier": "A", "wave": "Wave 1", "gop_voters": "296540", "gop_share": "0.3394", "yard_goal": "164", "four_x_eight_goal": "14", "chair": "Carl Cascio", "chair_email": "chairman@pbcgop.org", "chair_phone": "561-602-9335", "delivery_contact": "Carl Cascio", "delivery_phone": "561-602-9335", "delivery_email": "chairman@pbcgop.org", "rec_email": "info@palmbeach.gop", "rec_website": "https://www.palmbeach.gop/", "meeting_location": "Palm Beach Airport Hilton, 150 Australian Avenue, West Palm Beach, FL 33401", "region": "Southeast - Broward/Palm Beach Hub", "status": "chair_complete", "followup": "", "last_update": "2026-04-26", "update_source": "florida.gop (pbcgop.org is legacy domain)", "region_group": "Southeast", "color": "green", "lat": 26.6515, "lng": -80.2767}, {"county": "Pasco", "tier": "A", "wave": "Wave 1", "gop_voters": "179236", "gop_share": "0.4533", "yard_goal": "122", "four_x_eight_goal": "12", "chair": "Troy Stevenson", "chair_email": "chair@pascogop.com", "chair_phone": "727-863-5400", "delivery_contact": "Shawn Foster", "delivery_phone": "727-808-4131", "delivery_email": "chair@pascogop.com", "rec_email": "chair@pascogop.com", "rec_website": "https://pascogop.com/", "meeting_location": "HQ: 12043 Cobbler Ln, Hudson, FL — open Mon/Wed/Fri 11AM–2PM (confirmed by Chair Troy Stevenson). REC mtg: Myrtle Lake Baptist Church, 2017 Reigler Rd, Land O'Lakes, FL 34639; 3rd Thu monthly 6:30PM.", "region": "Central West - Tampa Bay Hub", "status": "chair_complete", "followup": "", "last_update": "2026-04-28", "update_source": "Field call 2026-04-28", "region_group": "Central West", "color": "green", "lat": 28.311, "lng": -82.4358}, {"county": "Pinellas", "tier": "A", "wave": "Wave 1", "gop_voters": "239089", "gop_share": "0.3942", "yard_goal": "144", "four_x_eight_goal": "14", "chair": "Adam Ross", "chair_email": "chairman@pinellasrepublicans.com", "chair_phone": "727-319-3700", "delivery_contact": "Todd Jennings", "delivery_phone": "843-860-5139", "delivery_email": "info@pinellasrepublicans.com", "rec_email": "info@pinellasrepublicans.com", "rec_website": "https://www.pinellasrepublican.org/", "meeting_location": "Feather Sound Country Club, 2201 Feather Sound Dr., Clearwater, FL 33762 (2nd Mon 7PM REC mtg). NEW HQ opens 2026-06-01 on US 19, Palm Harbor — confirmed yard sign drop site (Chair Adam Ross).", "region": "Central West - Tampa Bay Hub", "status": "chair_complete", "followup": "Confirm exact US 19 Palm Harbor HQ address before June 1 opening.", "last_update": "2026-04-28", "update_source": "Field call 2026-04-28", "region_group": "Central West", "color": "green", "lat": 27.9032, "lng": -82.7256}, {"county": "Polk", "tier": "A", "wave": "Wave 1", "gop_voters": "190965", "gop_share": "0.4238", "yard_goal": "126", "four_x_eight_goal": "12", "chair": "Sam Romain", "chair_email": "s.romain93@gmail.com", "chair_phone": "320-444-3102", "delivery_contact": "Sam Romain", "delivery_phone": "320-444-3102", "delivery_email": "s.romain93@gmail.com", "rec_email": "s.romain93@gmail.com", "rec_website": "https://polk.gop/", "meeting_location": "Champions Church, 1801 Havendale Blvd N., Winter Haven, FL; every 3rd Monday at 6:30PM (social starts 6PM)", "region": "Central West - Polk/I-4 Hub", "status": "chair_complete", "followup": "No REC HQ for 2026; Chair Sam Romain to identify 4x8 candidate locations.", "last_update": "2026-04-28", "update_source": "Field call 2026-04-28", "region_group": "Central West", "color": "orange", "lat": 27.9489, "lng": -81.6906}, {"county": "Collier", "tier": "B", "wave": "Wave 1", "gop_voters": "143246", "gop_share": "0.5539", "yard_goal": "94", "four_x_eight_goal": "9", "chair": "John Meo Jr.", "chair_email": "chair@collier.gop", "chair_phone": "732-239-1052", "delivery_contact": "John Meo Jr.", "delivery_phone": "732-239-1052", "delivery_email": "chair@collier.gop", "rec_email": "chair@collier.gop", "rec_website": "https://collier.gop/", "meeting_location": "NABOR Conference Center, 1455 Pine Ridge Rd, Naples, FL 34109", "region": "Southwest - Naples/Fort Myers Hub", "status": "chair_complete", "followup": "", "last_update": "2026-04-26", "update_source": "florida.gop", "region_group": "Southwest", "color": "green", "lat": 26.0908, "lng": -81.4012}, {"county": "Lake", "tier": "B", "wave": "Wave 1", "gop_voters": "131299", "gop_share": "0.4787", "yard_goal": "89", "four_x_eight_goal": "9", "chair": "Taylor Yarkosky", "chair_email": "tayloryarkosky@gmail.com", "chair_phone": "321-231-0558", "delivery_contact": "Taylor Yarkosky", "delivery_phone": "321-231-0558", "delivery_email": "tayloryarkosky@gmail.com", "rec_email": "info@lakecountyrepublicans.org", "rec_website": "https://lakecountyrepublicans.org/", "meeting_location": "100 E. Caroline Street, Tavares, FL 32778", "region": "Central East - Orlando/Lake Hub", "status": "chair_complete", "followup": "", "last_update": "2026-04-26", "update_source": "Master Directory + florida.gop", "region_group": "Central East", "color": "green", "lat": 28.7635, "lng": -81.7124}, {"county": "Manatee", "tier": "B", "wave": "Wave 1", "gop_voters": "138477", "gop_share": "0.4965", "yard_goal": "92", "four_x_eight_goal": "9", "chair": "Mark Flanagan", "chair_email": "chairman@manateegop.com", "chair_phone": "941-920-1585", "delivery_contact": "Mark Flanagan", "delivery_phone": "941-920-1585", "delivery_email": "chairman@manateegop.com", "rec_email": "admin@manateegop.com", "rec_website": "https://manateegop.com/", "meeting_location": "HQ: 4814 26th St W, Bradenton, FL 34207; quarterly meetings at 7:00 PM (venue rotates — confirm with HQ)", "region": "Southwest - Sarasota/Bradenton Hub", "status": "chair_complete", "followup": "Meeting location is officially TBD per florida.gop. Mandatory chair-direct call before delivery.", "last_update": "2026-05-01", "update_source": "Master Directory (chair email implies domain) + Web research scrape 2026-05-01", "region_group": "Southwest", "field_updates": [{"field": "meeting_location", "old": "TBD", "new": "HQ: 4814 26th St W, Bradenton, FL 34207; quarterly meetings at 7:00 PM (venue rotates — confirm with HQ)", "source": "https://florida.gop/republican-parties/manatee/", "date": "2026-05-01"}], "color": "green", "lat": 27.4799, "lng": -82.3651}, {"county": "Marion", "tier": "B", "wave": "Wave 1", "gop_voters": "136628", "gop_share": "0.5163", "yard_goal": "90", "four_x_eight_goal": "9", "chair": "Brigitte Smith", "chair_email": "brigitte.a.smith@protonmail.com", "chair_phone": "352-783-1911", "delivery_contact": "Brigitte Smith", "delivery_phone": "352-783-1911", "delivery_email": "brigitte.a.smith@protonmail.com", "rec_email": "brigitte.a.smith@protonmail.com", "rec_website": "https://www.marioncountyrec.com/", "meeting_location": "The Ocala Golf Club, 3130 E. Silver Springs Blvd, Ocala, FL 34470", "region": "Central East / North-Central - Ocala Hub", "status": "chair_complete", "followup": "", "last_update": "2026-04-26", "update_source": "Master Directory", "region_group": "Central East", "color": "green", "lat": 29.2087, "lng": -82.0438}, {"county": "Sarasota", "tier": "B", "wave": "Wave 1", "gop_voters": "160009", "gop_share": "0.4924", "yard_goal": "100", "four_x_eight_goal": "9", "chair": "Jack Brill", "chair_email": "jackbrillrpos@gmail.com", "chair_phone": "941.777.4467", "delivery_contact": "Joseph Neunder", "delivery_phone": "941-914-5262", "delivery_email": "jackbrillrpos@gmail.com", "rec_email": "jackbrillrpos@gmail.com", "rec_website": "https://www.sarasotagop.com/", "meeting_location": "HQ: 1747 Cattlemen Rd, Sarasota, FL 34232; meetings 2nd Thursday at 6:30 PM (location rotates between North and South Sarasota County)", "region": "Southwest - Sarasota/Bradenton Hub", "status": "chair_complete", "followup": "", "last_update": "2026-05-01", "update_source": "Master Directory + Web research scrape 2026-05-01", "region_group": "Southwest", "field_updates": [{"field": "meeting_location", "old": "Location rotates between North and South Sarasota County; every 2nd Thursday at 6:30 PM", "new": "HQ: 1747 Cattlemen Rd, Sarasota, FL 34232; meetings 2nd Thursday at 6:30 PM (location rotates between North and South Sarasota County)", "source": "https://florida.gop/republican-parties/sarasota/", "date": "2026-05-01"}], "color": "green", "lat": 27.1838, "lng": -82.3674}, {"county": "Seminole", "tier": "B", "wave": "Wave 1", "gop_voters": "120266", "gop_share": "0.3555", "yard_goal": "85", "four_x_eight_goal": "6", "chair": "Steve Collins", "chair_email": "", "chair_phone": "407-353-8387", "delivery_contact": "Steve Collins", "delivery_phone": "407-353-8387", "delivery_email": "chair@seminolegop.org", "rec_email": "chair@seminolegop.org", "rec_website": "https://seminolegop.org/", "meeting_location": "Office: 274 Wilshire Blvd Ste 224, Casselberry, FL — call office (407-261-9949) for current meeting venue", "region": "Central East - Orlando/Seminole Hub", "status": "partial_with_delivery", "followup": "", "last_update": "2026-05-01", "update_source": "Web research scrape 2026-05-01", "region_group": "Central East", "field_updates": [{"field": "meeting_location", "old": "Call office / see Seminole GOP calendar", "new": "Office: 274 Wilshire Blvd Ste 224, Casselberry, FL — call office (407-261-9949) for current meeting venue", "source": "https://seminolegop.org/", "date": "2026-05-01"}], "color": "orange", "lat": 28.7194, "lng": -81.2073}, {"county": "St. Johns", "tier": "B", "wave": "Wave 1", "gop_voters": "131586", "gop_share": "0.5598", "yard_goal": "89", "four_x_eight_goal": "9", "chair": "Denver Cook", "chair_email": "denver@Denvercook.com", "chair_phone": "904-547-0027", "delivery_contact": "Denver Cook", "delivery_phone": "904-547-0027", "delivery_email": "denver@Denvercook.com", "rec_email": "denver@Denvercook.com", "rec_website": "https://www.stjohns.gop/", "meeting_location": "Holiday Inn World Golf Village, 475 Commerce Lake Drive, St. Augustine, FL 32095; first Thursday monthly (5:30 PM orientation / 6:30 PM meeting)", "region": "Northeast - St. Johns Hub", "status": "chair_complete", "followup": "", "last_update": "2026-04-26", "update_source": "florida.gop", "region_group": "Northeast", "color": "green", "lat": 29.9012, "lng": -81.4035}, {"county": "Volusia", "tier": "B", "wave": "Wave 1", "gop_voters": "170248", "gop_share": "0.4306", "yard_goal": "104", "four_x_eight_goal": "9", "chair": "MaryAnn Pistilli", "chair_email": "chairpistilli@gmail.com", "chair_phone": "386-689-2164", "delivery_contact": "MaryAnn Pistilli", "delivery_phone": "386-689-2164", "delivery_email": "chairpistilli@gmail.com", "rec_email": "chairpistilli@gmail.com", "rec_website": "https://www.volusiacountyrepublicans.org/", "meeting_location": "Location varies (subject to call of the Chair); minimum 6 meetings annually, sign-in 6 PM, start 7 PM", "region": "Central East - Volusia/Daytona Hub", "status": "chair_complete", "followup": "Phone discrepancy between workbook and Master Directory (386-689-2164 vs 386-348-5547). Verify before relying.", "last_update": "2026-05-01", "update_source": "Web research scrape 2026-05-01", "region_group": "Central East", "field_updates": [{"field": "meeting_location", "old": "Varies", "new": "Location varies (subject to call of the Chair); minimum 6 meetings annually, sign-in 6 PM, start 7 PM", "source": "https://www.volusiacountyrepublicans.org/recvc_monthly_meetings", "date": "2026-05-01"}], "color": "green", "lat": 29.0277, "lng": -81.0796}, {"county": "Bay", "tier": "C", "wave": "Wave 2", "gop_voters": "73739", "gop_share": "0.5834", "yard_goal": "52", "four_x_eight_goal": "4", "chair": "Tho Bishop", "chair_email": "thobishop@gmail.com", "chair_phone": "850-866-9606", "delivery_contact": "Tho Bishop", "delivery_phone": "850-866-9606", "delivery_email": "thobishop@gmail.com", "rec_email": "thobishop@gmail.com", "rec_website": "https://baygop.com/", "meeting_location": "Bay County Republican HQ, 1607 Lisenby Avenue, Suite C, Panama City, FL 32405", "region": "Panhandle West - Panama City Hub", "status": "chair_complete", "followup": "", "last_update": "", "update_source": "", "region_group": "Panhandle", "color": "green", "lat": 30.2348, "lng": -85.6431}, {"county": "Charlotte", "tier": "C", "wave": "Wave 2", "gop_voters": "81723", "gop_share": "0.5421", "yard_goal": "55", "four_x_eight_goal": "6", "chair": "Dave Kalin", "chair_email": "", "chair_phone": "941-743-7335", "delivery_contact": "Charlotte GOP HQ / Dave Kalin", "delivery_phone": "941-743-7335", "delivery_email": "Secretary@charlottegop.com", "rec_email": "Secretary@charlottegop.com", "rec_website": "https://www.charlottegop.com/", "meeting_location": "Punta Gorda Association of Realtors, 3320 Loveland Blvd, Punta Gorda, FL 33980; every 4th Thursday at 6PM", "region": "Southwest - Sarasota/Charlotte Hub", "status": "partial_with_delivery", "followup": "", "last_update": "2026-04-26", "update_source": "florida.gop", "region_group": "Southwest", "color": "orange", "lat": 26.9006, "lng": -82.0454}, {"county": "Citrus", "tier": "C", "wave": "Wave 2", "gop_voters": "70089", "gop_share": "0.5921", "yard_goal": "51", "four_x_eight_goal": "4", "chair": "George Gasparini", "chair_email": "chairman@citrusgop.org", "chair_phone": "352-220-2333", "delivery_contact": "George Gasparini", "delivery_phone": "352-220-2333", "delivery_email": "chairman@citrusgop.org", "rec_email": "chairman@citrusgop.org", "rec_website": "https://citrusgop.org/", "meeting_location": "Realtors Association, 714 South Scarboro Ave, Lecanto, FL; every 3rd Monday at 6:30PM", "region": "Central West - Tampa Bay Hub", "status": "chair_complete", "followup": "Co. Commissioner Diana Finnegan to provide 4x8 candidate locations (alt source to Chair Gasparini).", "last_update": "2026-04-28", "update_source": "Field call 2026-04-28", "region_group": "Central West", "color": "green", "lat": 28.843, "lng": -82.5294}, {"county": "Clay", "tier": "C", "wave": "Wave 2", "gop_voters": "87024", "gop_share": "0.5712", "yard_goal": "57", "four_x_eight_goal": "6", "chair": "Rhonda Jett", "chair_email": "chairman@clayrepublicans.com", "chair_phone": "904-557-5428", "delivery_contact": "Samantha Warnet (delivery agent → Clay HQ)", "delivery_phone": "904-557-5428", "delivery_email": "rhondajett@hotmail.com", "rec_email": "chairman@clayrepublicans.com", "rec_website": "https://clayrepublicans.com/", "meeting_location": "Orange Park Town Hall, 2042 Park Ave, Orange Park", "region": "Northeast - Jacksonville Hub", "status": "chair_complete", "followup": "Get Samantha Warnet direct phone; verify name spelling against REC roster.", "last_update": "2026-04-28", "update_source": "Field call 2026-04-28", "region_group": "Northeast", "color": "green", "lat": 29.9836, "lng": -81.858}, {"county": "Escambia", "tier": "C", "wave": "Wave 2", "gop_voters": "98305", "gop_share": "0.486", "yard_goal": "61", "four_x_eight_goal": "6", "chair": "John Roberts", "chair_email": "robertsjw@aol.com", "chair_phone": "850-525-5686", "delivery_contact": "John Roberts", "delivery_phone": "850-525-5686", "delivery_email": "johnrobertsfl@gmail.com", "rec_email": "robertsjw@aol.com", "rec_website": "https://escambiarepublican.com/", "meeting_location": "Downtown Library, 239 N Spring Street", "region": "Panhandle West - Pensacola Hub", "status": "chair_complete", "followup": "", "last_update": "2026-04-26", "update_source": "florida.gop + escambiarepublican.com (corrects domain to live site)", "region_group": "Panhandle", "color": "green", "lat": 30.616, "lng": -87.3414}, {"county": "Hernando", "tier": "C", "wave": "Wave 2", "gop_voters": "69233", "gop_share": "0.5156", "yard_goal": "51", "four_x_eight_goal": "4", "chair": "Justin Noe", "chair_email": "info@HernandoGOP.com", "chair_phone": "352-442-2480", "delivery_contact": "Justin Noe (Chair — direct yard sign acceptance)", "delivery_phone": "352-442-2480", "delivery_email": "nick@holmesforhernando.com", "rec_email": "nick@holmesforhernando.com", "rec_website": "https://hernandogop.com/", "meeting_location": "Northcliffe Church, 10515 Northcliffe Blvd, Spring Hill, FL 34608; 3rd Tuesday monthly at 6:30PM", "region": "Central West - Tampa Bay Hub", "status": "chair_complete", "followup": "No REC HQ for 2026; yard signs delivered direct via Chair Justin Noe.", "last_update": "2026-04-28", "update_source": "Field call 2026-04-28", "region_group": "Central West", "color": "orange", "lat": 28.5552, "lng": -82.4682}, {"county": "Indian River", "tier": "C", "wave": "Wave 2", "gop_voters": "62169", "gop_share": "0.5278", "yard_goal": "48", "four_x_eight_goal": "4", "chair": "Lamarre Notargiacomo", "chair_email": "chairman@ircgop.com", "chair_phone": "772-559-1986", "delivery_contact": "Lamarre Notargiacomo", "delivery_phone": "772-559-1986", "delivery_email": "lamarre.notargiacomo@indianriver.gop", "rec_email": "chairman@ircgop.com", "rec_website": "https://www.ircgop.com/", "meeting_location": "The Heritage Center, 2140 14th Ave., Vero Beach, FL 32960", "region": "Southeast / Treasure Coast Hub", "status": "chair_complete", "followup": "", "last_update": "2026-04-26", "update_source": "florida.gop + ircgop.com (replaces unreachable indianriver.gop)", "region_group": "Southeast", "color": "green", "lat": 27.6916, "lng": -80.5727}, {"county": "Leon", "tier": "C", "wave": "Wave 2", "gop_voters": "54539", "gop_share": "0.2966", "yard_goal": "45", "four_x_eight_goal": "4", "chair": "Andrew Wiggins", "chair_email": "chairman@leongop.com", "chair_phone": "850-251-3244", "delivery_contact": "Andrew Wiggins", "delivery_phone": "850-251-3244", "delivery_email": "andrewwigginstally@gmail.com", "rec_email": "chairman@leongop.com", "rec_website": "https://leongop.com/", "meeting_location": "Casa Grande Margaritas & Cocina", "region": "Panhandle East / Big Bend - Tallahassee Hub", "status": "chair_complete", "followup": "", "last_update": "2026-04-26", "update_source": "florida.gop (replaces personal gmail)", "region_group": "Panhandle", "color": "green", "lat": 30.457, "lng": -84.2825}, {"county": "Martin", "tier": "C", "wave": "Wave 2", "gop_voters": "62680", "gop_share": "0.5436", "yard_goal": "48", "four_x_eight_goal": "4", "chair": "Patty Marchesi", "chair_email": "MC.REC.Chair@icloud.com", "chair_phone": "732-991-5483", "delivery_contact": "Patty Marchesi", "delivery_phone": "732-991-5483", "delivery_email": "dining4u@hotmail.com", "rec_email": "office@martingop.com", "rec_website": "https://www.martingop.com/", "meeting_location": "Port Salerno Civic Center, 4940 SE Anchor Avenue, Stuart, FL 34997", "region": "Southeast / Treasure Coast Hub", "status": "chair_complete", "followup": "", "last_update": "2026-04-26", "update_source": "florida.gop + Master Directory (replaces personal hotmail)", "region_group": "Southeast", "color": "green", "lat": 27.0825, "lng": -80.4035}, {"county": "Okaloosa", "tier": "C", "wave": "Wave 2", "gop_voters": "85689", "gop_share": "0.5868", "yard_goal": "57", "four_x_eight_goal": "6", "chair": "Doug 'Doc' Stauffer", "chair_email": "chairman@okaloosagop.com", "chair_phone": "(850) 543-8742", "delivery_contact": "Marvin Brigman", "delivery_phone": "850-499-1071", "delivery_email": "chairman@okaloosagop.com", "rec_email": "chairman@okaloosagop.com", "rec_website": "https://www.okaloosagop.com/", "meeting_location": "Niceville City Hall, 208 N Partin Drive, Niceville, FL 32578, or Faith Independent Baptist Church, 1309 Valparaiso Blvd, Niceville, FL 32578; usually 3rd Monday", "region": "Panhandle West - Fort Walton Hub", "status": "chair_complete", "followup": "", "last_update": "2026-04-26", "update_source": "okaloosagop.com/people.html + Master Directory + news article", "region_group": "Panhandle", "color": "green", "lat": 30.6695, "lng": -86.5957}, {"county": "Osceola", "tier": "C", "wave": "Wave 2", "gop_voters": "69131", "gop_share": "0.3007", "yard_goal": "51", "four_x_eight_goal": "4", "chair": "Joel Davis", "chair_email": "chairman@osceola.gop", "chair_phone": "407-846-8889", "delivery_contact": "Joel Davis", "delivery_phone": "407-846-8889", "delivery_email": "info@osceola.gop", "rec_email": "info@osceola.gop", "rec_website": "https://www.osceola.gop/", "meeting_location": "Elks Lodge, 1655 Kings Highway, Kissimmee, FL", "region": "Central East - Orlando/Osceola Hub", "status": "chair_complete", "followup": "", "last_update": "2026-04-26", "update_source": "florida.gop + Master Directory", "region_group": "Central East", "color": "green", "lat": 28.064, "lng": -81.145}, {"county": "Santa Rosa", "tier": "C", "wave": "Wave 2", "gop_voters": "89014", "gop_share": "0.6392", "yard_goal": "58", "four_x_eight_goal": "6", "chair": "Sharon Regan", "chair_email": "sharonregan@hotmail.com", "chair_phone": "850-206-4931", "delivery_contact": "Sharon Regan", "delivery_phone": "850-206-4931", "delivery_email": "sharonregan@hotmail.com", "rec_email": "sharonregan@hotmail.com", "rec_website": "", "meeting_location": "3966 Avalon Blvd, Milton, FL 32583; 4th Monday monthly at 5:30 PM", "region": "Panhandle West - Pensacola Hub", "status": "chair_complete", "followup": "Chair Sharon Regan to send 4x8 candidate location list.", "last_update": "2026-04-28", "update_source": "Field call 2026-04-28", "region_group": "Panhandle", "color": "green", "lat": 30.7568, "lng": -86.9824}, {"county": "St. Lucie", "tier": "C", "wave": "Wave 2", "gop_voters": "93611", "gop_share": "0.3903", "yard_goal": "60", "four_x_eight_goal": "6", "chair": "Joe James", "chair_email": "slcgopchairjames@gmail.com", "chair_phone": "772-444-6608", "delivery_contact": "Joe James", "delivery_phone": "772-444-6608", "delivery_email": "slcgopchairjames@gmail.com", "rec_email": "slcgopchairjames@gmail.com", "rec_website": "https://florida.gop/st-lucie-guide", "meeting_location": "The Polish American Club, 343 NW Prima Vista Blvd, Port St. Lucie, FL 34983; 2nd Thursday monthly (doors 5PM / meeting 6PM)", "region": "Southeast / Treasure Coast Hub", "status": "chair_complete", "followup": "", "last_update": "2026-04-26", "update_source": "florida.gop (no separate REC site)", "region_group": "Southeast", "color": "green", "lat": 27.3837, "lng": -80.4472}, {"county": "Sumter", "tier": "C", "wave": "Wave 2", "gop_voters": "76686", "gop_share": "0.602", "yard_goal": "53", "four_x_eight_goal": "6", "chair": "Mark Morgan", "chair_email": "facel@me.com", "chair_phone": "310-528-7471", "delivery_contact": "Bob Greene", "delivery_phone": "978-502-5014", "delivery_email": "facel@me.com", "rec_email": "facel@me.com", "rec_website": "https://sumterrepublicans.com/", "meeting_location": "1st Thursday at 6:30 PM; specific location not published — contact chairman", "region": "Central West - Sumter/I-75 Hub", "status": "chair_complete", "followup": "No REC HQ for 2026 unless statewide/gubernatorial/presidential campaign funds one. Pleasant call.", "last_update": "2026-05-01", "update_source": "Field call 2026-04-28 + Web research scrape 2026-05-01", "region_group": "Central West", "field_updates": [{"field": "rec_website", "old": "", "new": "https://sumterrepublicans.com/", "source": "https://florida.gop/republican-parties/sumter/", "date": "2026-05-01"}, {"field": "meeting_location", "old": "Contact chairman for current meeting location; every 1st Thursday at 6:30 PM", "new": "1st Thursday at 6:30 PM; specific location not published — contact chairman", "source": "https://florida.gop/republican-parties/sumter/", "date": "2026-05-01"}], "color": "orange", "lat": 28.7027, "lng": -82.0779}, {"county": "Alachua", "tier": "D", "wave": "Wave 3", "gop_voters": "48186", "gop_share": "0.293", "yard_goal": "28", "four_x_eight_goal": "4", "chair": "Tim Marden", "chair_email": "chairman@alachuarepublicans.com", "chair_phone": "352-474-1022", "delivery_contact": "Tim Marden", "delivery_phone": "352-474-1022", "delivery_email": "chairman@alachuarepublicans.com", "rec_email": "chairman@alachuarepublicans.com", "rec_website": "http://www.alachuarepublicans.com/", "meeting_location": "Happy Homes Inc 7600 NW 5th Place Gainesville FL 32607", "region": "North Central - Gainesville Hub", "status": "chair_complete", "followup": "", "last_update": "2026-04-26", "update_source": "alachuarepublicans.com + florida.gop", "region_group": "North Central", "color": "green", "lat": 29.6745, "lng": -82.3578}, {"county": "Baker", "tier": "D", "wave": "Wave 3", "gop_voters": "12471", "gop_share": "0.7057", "yard_goal": "25", "four_x_eight_goal": "2", "chair": "Randy Crews", "chair_email": "BakerflGOP@gmail.com", "chair_phone": "", "delivery_contact": "Danny Norton", "delivery_phone": "904-945-1525", "delivery_email": "raenray2@yahoo.com", "rec_email": "raenray2@yahoo.com", "rec_website": "", "meeting_location": "Macclenny Fire Rescue, 139 E. Macclenny Avenue, Macclenny, FL (across from City Hall); 4th Tuesday monthly 6:30 PM", "region": "Northeast - Jacksonville Hub", "status": "delivery_only", "followup": "", "last_update": "2026-05-01", "update_source": "Web research scrape 2026-05-01", "region_group": "Northeast", "field_updates": [{"field": "chair_email", "old": "", "new": "BakerflGOP@gmail.com", "source": "https://florida.gop/republican-parties/baker/", "date": "2026-05-01"}], "color": "white", "lat": 30.3299, "lng": -82.2845}, {"county": "Bradford", "tier": "D", "wave": "Wave 3", "gop_voters": "10617", "gop_share": "0.639", "yard_goal": "25", "four_x_eight_goal": "2", "chair": "Richard Solze", "chair_email": "rsolze@embarqmail.com", "chair_phone": "904-364-6077", "delivery_contact": "Richard Solze", "delivery_phone": "904-364-6077", "delivery_email": "rsolze@embarqmail.com", "rec_email": "rsolze@embarqmail.com", "rec_website": "", "meeting_location": "Capital City Bank Boardroom, 350 N Temple Ave, Starke, FL; every 2nd Thursday at 7PM", "region": "North Central - Gainesville Hub", "status": "chair_complete", "followup": "", "last_update": "", "update_source": "", "region_group": "North Central", "color": "green", "lat": 29.9508, "lng": -82.1693}, {"county": "Calhoun", "tier": "D", "wave": "Wave 3", "gop_voters": "4769", "gop_share": "0.6333", "yard_goal": "25", "four_x_eight_goal": "2", "chair": "Bill Gaskin", "chair_email": "bill@billgaskin.com", "chair_phone": "404-427-8043", "delivery_contact": "Bill Gaskin", "delivery_phone": "404-427-8043", "delivery_email": "bill@billgaskin.com", "rec_email": "terrellstoltzfus@gmail.com", "rec_website": "", "meeting_location": "Panhandle Pioneer Settlement Log Cabin", "region": "Panhandle East / Big Bend - Tallahassee Hub", "status": "chair_complete", "followup": "", "last_update": "", "update_source": "", "region_group": "Panhandle", "color": "green", "lat": 30.4047, "lng": -85.1939}, {"county": "Columbia", "tier": "D", "wave": "Wave 3", "gop_voters": "24016", "gop_share": "0.5879", "yard_goal": "25", "four_x_eight_goal": "2", "chair": "Roseanna Lee", "chair_email": "rosylee@windstream.net", "chair_phone": "561-723-3994", "delivery_contact": "Roseanna Lee", "delivery_phone": "561-723-3994", "delivery_email": "rosylee@windstream.net", "rec_email": "rosylee@windstream.net", "rec_website": "https://columbiagop.com/", "meeting_location": "Fairgrounds", "region": "North Central - Lake City Hub", "status": "chair_complete", "followup": "", "last_update": "2026-04-26", "update_source": "Master Directory", "region_group": "North Central", "color": "green", "lat": 30.2236, "lng": -82.6225}, {"county": "DeSoto", "tier": "D", "wave": "Wave 3", "gop_voters": "8111", "gop_share": "0.5151", "yard_goal": "25", "four_x_eight_goal": "2", "chair": "Erik Howard", "chair_email": "desotorepublicans@gmail.com", "chair_phone": "239-707-8091", "delivery_contact": "Erik Howard", "delivery_phone": "239-707-8091", "delivery_email": "desotorepublicans@gmail.com", "rec_email": "desotorepublicans@gmail.com", "rec_website": "https://desotocountyrepublicans.com/", "meeting_location": "MyShelley's Restaurant, 15 W. Oak St., Arcadia, FL 34266", "region": "Southwest - Sarasota/Hardee Hub", "status": "chair_complete", "followup": "", "last_update": "2026-04-26", "update_source": "florida.gop + Master Directory", "region_group": "Southwest", "color": "green", "lat": 27.1864, "lng": -81.8094}, {"county": "Dixie", "tier": "D", "wave": "Wave 3", "gop_voters": "6753", "gop_share": "0.678", "yard_goal": "25", "four_x_eight_goal": "2", "chair": "Jovante' Teague", "chair_email": "jovante@outlook.com", "chair_phone": "352-440-1390", "delivery_contact": "Jovante' Teague", "delivery_phone": "352-440-1390", "delivery_email": "jovante@outlook.com", "rec_email": "dixiecountyrepublicanparty@gmail.com", "rec_website": "", "meeting_location": "Taste of Dixie Diner, 16840 SE Hwy 19, Cross City, FL 32628", "region": "North Central - Chiefland/Trenton Hub", "status": "chair_complete", "followup": "", "last_update": "", "update_source": "", "region_group": "North Central", "color": "green", "lat": 29.5829, "lng": -83.1735}, {"county": "Flagler", "tier": "D", "wave": "Wave 3", "gop_voters": "49729", "gop_share": "0.5102", "yard_goal": "28", "four_x_eight_goal": "4", "chair": "Perry Mitrano", "chair_email": "chairman@flaglergop.com", "chair_phone": "386-237-2047", "delivery_contact": "Perry Mitrano", "delivery_phone": "386-237-2047", "delivery_email": "chairman@flaglergop.com", "rec_email": "flaglergop2020@gmail.com", "rec_website": "https://flaglergop.com/", "meeting_location": "Palm Coast Community Center, 305 Palm Coast Pkwy, Palm Coast, FL 32137", "region": "Northeast - St. Johns/Flagler Hub", "status": "chair_complete", "followup": "", "last_update": "2026-04-26", "update_source": "florida.gop", "region_group": "Northeast", "color": "green", "lat": 29.4733, "lng": -81.2899}, {"county": "Franklin", "tier": "D", "wave": "Wave 3", "gop_voters": "4078", "gop_share": "0.5352", "yard_goal": "25", "four_x_eight_goal": "2", "chair": "Kristy Branch Banks", "chair_email": "", "chair_phone": "850-653-5043", "delivery_contact": "Richard 'Rick' Watson", "delivery_phone": "850-591-4770", "delivery_email": "rickwatson47@gmail.com", "rec_email": "rickwatson47@gmail.com", "rec_website": "", "meeting_location": "Location rotates East/West side of county; 3rd Thursday of the month", "region": "Panhandle East / Big Bend - Tallahassee Hub", "status": "partial_with_delivery", "followup": "Role-title ambiguity: workbook lists Kristy Branch Banks as Chair; florida.gop calls Rick Watson 'Chair'. Confirm via direct call. | State GOP reportedly intervened July 2025; Julie Boisseau may now be chair (per Apalachicola Times 2025-08-04). Verify before contact. [Research 2026-05-01]", "last_update": "2026-05-01", "update_source": "Web research scrape 2026-05-01", "region_group": "Panhandle", "field_updates": [{"field": "meeting_location", "old": "Meeting location varies from east to west side of the county; 3rd Thursday monthly", "new": "Location rotates East/West side of county; 3rd Thursday of the month", "source": "https://florida.gop/republican-parties/franklin/", "date": "2026-05-01"}], "color": "orange", "lat": 29.8245, "lng": -84.8597}, {"county": "Gadsden", "tier": "D", "wave": "Wave 3", "gop_voters": "5907", "gop_share": "0.2215", "yard_goal": "25", "four_x_eight_goal": "2", "chair": "Doug Croley", "chair_email": "dougcroley@hotmail.com", "chair_phone": "", "delivery_contact": "Lance Watson", "delivery_phone": "850-524-1897", "delivery_email": "dougcroley@hotmail.com", "rec_email": "dougcroley@hotmail.com", "rec_website": "", "meeting_location": "Havana Community Center, 128 East 7th Street, Havana, FL 32333; second Monday monthly at 6PM", "region": "Panhandle East / Big Bend - Tallahassee Hub", "status": "partial_with_delivery", "followup": "", "last_update": "", "update_source": "", "region_group": "Panhandle", "color": "orange", "lat": 30.5773, "lng": -84.6157}, {"county": "Gilchrist", "tier": "D", "wave": "Wave 3", "gop_voters": "8980", "gop_share": "0.7069", "yard_goal": "25", "four_x_eight_goal": "2", "chair": "David Biddle", "chair_email": "dcbbiddle@yahoo.com", "chair_phone": "352-339-0445", "delivery_contact": "David Biddle", "delivery_phone": "352-339-0445", "delivery_email": "dcbbiddle@yahoo.com", "rec_email": "dcbbiddle@yahoo.com", "rec_website": "", "meeting_location": "Gilchrist County Women’s Club, 2107 S Bronson Memorial Hwy (CR339), Trenton, FL 32693", "region": "North Central - Chiefland/Trenton Hub", "status": "chair_complete", "followup": "", "last_update": "", "update_source": "", "region_group": "North Central", "color": "green", "lat": 29.725, "lng": -82.7997}, {"county": "Glades", "tier": "D", "wave": "Wave 3", "gop_voters": "4034", "gop_share": "0.5981", "yard_goal": "25", "four_x_eight_goal": "2", "chair": "Curtis Clay", "chair_email": "brownnosed6@gmail.com", "chair_phone": "863-673-4862", "delivery_contact": "Curtis Clay", "delivery_phone": "863-673-4862", "delivery_email": "brownnosed6@gmail.com", "rec_email": "brownnosed6@gmail.com", "rec_website": "", "meeting_location": "1297 FL-78, Moore Haven, FL 33471", "region": "Southwest - Hendry/Glades Hub", "status": "chair_complete", "followup": "", "last_update": "", "update_source": "", "region_group": "Southwest", "color": "green", "lat": 26.9731, "lng": -81.1856}, {"county": "Gulf", "tier": "D", "wave": "Wave 3", "gop_voters": "7104", "gop_share": "0.6413", "yard_goal": "25", "four_x_eight_goal": "2", "chair": "Gail Alsobrook", "chair_email": "", "chair_phone": "", "delivery_contact": "Joanna Bryan", "delivery_phone": "850-227-6016", "delivery_email": "joanna812000@yahoo.com", "rec_email": "joanna812000@yahoo.com", "rec_website": "", "meeting_location": "St. Joe Garden Club, 216 8th Street, Port St. Joe, FL 32456; every 3rd Monday at 6:30PM", "region": "Panhandle East / Big Bend - Panama City/Blountstown Hub", "status": "delivery_only", "followup": "", "last_update": "", "update_source": "", "region_group": "Panhandle", "color": "white", "lat": 29.9082, "lng": -85.253}, {"county": "Hamilton", "tier": "D", "wave": "Wave 3", "gop_voters": "3648", "gop_share": "0.5217", "yard_goal": "25", "four_x_eight_goal": "2", "chair": "Ben Norris", "chair_email": "drnorris59@yahoo.com", "chair_phone": "386-234-0643", "delivery_contact": "Ben Norris", "delivery_phone": "386-234-0643", "delivery_email": "drnorris59@yahoo.com", "rec_email": "drnorris59@yahoo.com", "rec_website": "", "meeting_location": "Hamilton County Courthouse Annex, 1153 US Hwy 41 NW, Jasper, FL 32052; every 4th Monday at 7PM", "region": "North Central - Lake City Hub", "status": "chair_complete", "followup": "", "last_update": "", "update_source": "", "region_group": "North Central", "color": "green", "lat": 30.4944, "lng": -82.9466}, {"county": "Hardee", "tier": "D", "wave": "Wave 3", "gop_voters": "6553", "gop_share": "0.5832", "yard_goal": "25", "four_x_eight_goal": "2", "chair": "Sue Birge", "chair_email": "suebirge45@gmail.com", "chair_phone": "863-781-3536", "delivery_contact": "Sue Birge", "delivery_phone": "863-781-3536", "delivery_email": "suebirge45@gmail.com", "rec_email": "suebirge45@gmail.com", "rec_website": "", "meeting_location": "Riverview Missionary Baptist Church Social Hall, 132 East Main Street, Wauchula, FL 33873; first Tuesday monthly at 6:30 PM", "region": "Southwest - Hardee/Polk Hub", "status": "chair_complete", "followup": "", "last_update": "", "update_source": "", "region_group": "Southwest", "color": "green", "lat": 27.4945, "lng": -81.8093}, {"county": "Hendry", "tier": "D", "wave": "Wave 3", "gop_voters": "9293", "gop_share": "0.4974", "yard_goal": "25", "four_x_eight_goal": "2", "chair": "Ron Zimmerly", "chair_email": "rzimm2378@gmail.com", "chair_phone": "863-234-8397", "delivery_contact": "Ron Zimmerly", "delivery_phone": "863-234-8397", "delivery_email": "rzimm2378@gmail.com", "rec_email": "rzimm2378@gmail.com", "rec_website": "", "meeting_location": "Beef O’Bradys, 197 E Hickpochee Ave., LaBelle, FL 33935", "region": "Southwest - Hendry/Glades Hub", "status": "chair_complete", "followup": "", "last_update": "", "update_source": "", "region_group": "Southwest", "color": "green", "lat": 26.5582, "lng": -81.159}, {"county": "Highlands", "tier": "D", "wave": "Wave 3", "gop_voters": "35511", "gop_share": "0.5502", "yard_goal": "25", "four_x_eight_goal": "2", "chair": "Lauren Bush", "chair_email": "chair@highlandsrepublicans.com", "chair_phone": "863-402-5456", "delivery_contact": "Lauren Bush", "delivery_phone": "863-402-5456", "delivery_email": "chair@highlandsrepublicans.com", "rec_email": "hlgop@highlandsrepublicans.com", "rec_website": "https://highlandsrepublicans.com/", "meeting_location": "Sun N Lake Community Center, 3500 Edgewater Dr, Sebring, FL", "region": "Southwest - Highlands/Polk Hub", "status": "chair_complete", "followup": "", "last_update": "2026-04-26", "update_source": "florida.gop", "region_group": "Southwest", "color": "green", "lat": 27.3469, "lng": -81.3411}, {"county": "Holmes", "tier": "D", "wave": "Wave 3", "gop_voters": "8238", "gop_share": "0.7359", "yard_goal": "25", "four_x_eight_goal": "2", "chair": "Terry Mears", "chair_email": "mearsfam74@gmail.com", "chair_phone": "850-768-3022", "delivery_contact": "Terry Mears", "delivery_phone": "850-768-3022", "delivery_email": "mearsfam74@gmail.com", "rec_email": "mearsfam74@gmail.com", "rec_website": "", "meeting_location": "HCREC Headquarters, Bonifay, FL 32425", "region": "Panhandle West - Walton/Holmes Hub", "status": "chair_complete", "followup": "", "last_update": "", "update_source": "", "region_group": "Panhandle", "color": "green", "lat": 30.8669, "lng": -85.8087}, {"county": "Jackson", "tier": "D", "wave": "Wave 3", "gop_voters": "15926", "gop_share": "0.5892", "yard_goal": "25", "four_x_eight_goal": "2", "chair": "Clint Pate", "chair_email": "clintpate@yahoo.com", "chair_phone": "850-527-3900", "delivery_contact": "Clint Pate", "delivery_phone": "850-527-3900", "delivery_email": "clintpate@yahoo.com", "rec_email": "clintpate@yahoo.com", "rec_website": "", "meeting_location": "Jackson County Commissioners Board Room, 2864 Madison Street, Marianna", "region": "Panhandle East / Big Bend - Marianna Hub", "status": "chair_complete", "followup": "", "last_update": "", "update_source": "", "region_group": "Panhandle", "color": "green", "lat": 30.7972, "lng": -85.2156}, {"county": "Jefferson", "tier": "D", "wave": "Wave 3", "gop_voters": "4641", "gop_share": "0.4737", "yard_goal": "25", "four_x_eight_goal": "2", "chair": "Benjamin 'Glen' Bishop", "chair_email": "glensharonbishop@embarqmail.com", "chair_phone": "850-508-4536", "delivery_contact": "Benjamin “Glen” Bishop", "delivery_phone": "850-508-4536", "delivery_email": "glensharonbishop@embarqmail.com", "rec_email": "glensharonbishop@embarqmail.com", "rec_website": "", "meeting_location": "Monticello/Jefferson County Chamber of Commerce Bldg., 420 W. Washington Street, Monticello, FL 32344", "region": "Panhandle East / Big Bend - Tallahassee Hub", "status": "chair_complete", "followup": "", "last_update": "2026-04-26", "update_source": "florida.gop", "region_group": "Panhandle", "color": "green", "lat": 30.4254, "lng": -83.8917}, {"county": "Lafayette", "tier": "D", "wave": "Wave 3", "gop_voters": "3275", "gop_share": "0.7792", "yard_goal": "25", "four_x_eight_goal": "2", "chair": "Kimberly Ledbetter Patterson", "chair_email": "kimberlyenriquez@gmail.com", "chair_phone": "352-507-5108", "delivery_contact": "Kimberly Ledbetter Patterson", "delivery_phone": "352-507-5108", "delivery_email": "kimberlyenriquez@gmail.com", "rec_email": "kimberlyenriquez@gmail.com", "rec_website": "https://www.lafayetteflgop.com/", "meeting_location": "Mayo Community Center, 150 NW Community Circle, Mayo", "region": "North Central - Lake City Hub", "status": "chair_complete", "followup": "", "last_update": "2026-04-26", "update_source": "florida.gop", "region_group": "North Central", "color": "green", "lat": 29.9863, "lng": -83.1789}, {"county": "Levy", "tier": "D", "wave": "Wave 3", "gop_voters": "18398", "gop_share": "0.6189", "yard_goal": "25", "four_x_eight_goal": "2", "chair": "Michelle Finnen", "chair_email": "mfinnen@yahoo.com", "chair_phone": "352-949-8273", "delivery_contact": "Michelle Finnen", "delivery_phone": "352-949-8273", "delivery_email": "mfinnen@yahoo.com", "rec_email": "mfinnen@yahoo.com", "rec_website": "", "meeting_location": "Bronson FBC, 460 South Court Street, Bronson, FL 32621", "region": "North Central - Chiefland/Trenton Hub", "status": "chair_complete", "followup": "", "last_update": "", "update_source": "", "region_group": "North Central", "color": "green", "lat": 29.2941, "lng": -82.7892}, {"county": "Liberty", "tier": "D", "wave": "Wave 3", "gop_voters": "2842", "gop_share": "0.6285", "yard_goal": "25", "four_x_eight_goal": "2", "chair": "Donnie Read", "chair_email": "granpappy1958@gmail.com", "chair_phone": "850-643-7698", "delivery_contact": "Donnie Read", "delivery_phone": "850-643-7698", "delivery_email": "granpappy1958@gmail.com", "rec_email": "granpappy1958@gmail.com", "rec_website": "", "meeting_location": "Meeting location varies", "region": "Panhandle East / Big Bend - Tallahassee Hub", "status": "chair_complete", "followup": "", "last_update": "", "update_source": "", "region_group": "Panhandle", "color": "green", "lat": 30.241, "lng": -84.8829}, {"county": "Madison", "tier": "D", "wave": "Wave 3", "gop_voters": "5225", "gop_share": "0.4984", "yard_goal": "25", "four_x_eight_goal": "2", "chair": "Mike Rump", "chair_email": "mikettmkids@hotmail.com", "chair_phone": "850-614-4455", "delivery_contact": "Mike Rump", "delivery_phone": "850-614-4455", "delivery_email": "mikettmkids@hotmail.com", "rec_email": "rec.madison@yahoo.com", "rec_website": "", "meeting_location": "Chamber of Commerce Ag Building, 182 NW College Loop, Madison, FL", "region": "Panhandle East / Big Bend - Tallahassee Hub", "status": "chair_complete", "followup": "", "last_update": "2026-04-26", "update_source": "florida.gop + Master Directory", "region_group": "Panhandle", "color": "green", "lat": 30.4451, "lng": -83.4159}, {"county": "Monroe", "tier": "D", "wave": "Wave 3", "gop_voters": "24939", "gop_share": "0.4575", "yard_goal": "25", "four_x_eight_goal": "2", "chair": "Rhonda Rebman-Lopez", "chair_email": "Chairman@keysgop.org", "chair_phone": "305-389-2979", "delivery_contact": "Rhonda Rebman-Lopez", "delivery_phone": "305-389-2979", "delivery_email": "Chairman@keysgop.org", "rec_email": "info@keysgop.org", "rec_website": "https://keysgop.org/", "meeting_location": "Marathon Garden Club, 5270 Overseas Hwy (MM 50 Bayside), Marathon, FL 33050; confirm on website", "region": "Southeast - Miami/Keys Hub", "status": "chair_complete", "followup": "", "last_update": "2026-04-26", "update_source": "florida.gop + keysgop.org", "region_group": "Southeast", "color": "green", "lat": 25.0782, "lng": -80.448}, {"county": "Nassau", "tier": "D", "wave": "Wave 3", "gop_voters": "48665", "gop_share": "0.6085", "yard_goal": "28", "four_x_eight_goal": "4", "chair": "Chris Kirkland", "chair_email": "ckirkland62@gmail.com", "chair_phone": "904-861-7503", "delivery_contact": "Chris Kirkland", "delivery_phone": "904-861-7503", "delivery_email": "ckirkland62@gmail.com", "rec_email": "ckirkland62@gmail.com", "rec_website": "", "meeting_location": "Shuckers Restaurant; every 3rd Thursday at 7PM", "region": "Northeast - Jacksonville/Nassau Hub", "status": "chair_complete", "followup": "Chair conflict: workbook shows Chris Kirkland; Master Directory (2026-04-20) shows Darron Ayscue. Phone-confirm before delivery.", "last_update": "", "update_source": "", "region_group": "Northeast", "color": "green", "lat": 30.6094, "lng": -81.7702}, {"county": "Okeechobee", "tier": "D", "wave": "Wave 3", "gop_voters": "12194", "gop_share": "0.5964", "yard_goal": "25", "four_x_eight_goal": "2", "chair": "Jim Craig", "chair_email": "jimcraig47@yahoo.com", "chair_phone": "574-249-9495", "delivery_contact": "Jim Craig", "delivery_phone": "574-249-9495", "delivery_email": "jimcraig47@yahoo.com", "rec_email": "jimcraig47@yahoo.com", "rec_website": "", "meeting_location": "American Legion, 501 SE 2nd Street, Okeechobee, FL 34974; 3rd Monday monthly at 6:30PM", "region": "Southeast / Treasure-Interior Hub", "status": "chair_complete", "followup": "", "last_update": "", "update_source": "", "region_group": "Southeast", "color": "green", "lat": 27.385, "lng": -80.8889}, {"county": "Putnam", "tier": "D", "wave": "Wave 3", "gop_voters": "25620", "gop_share": "0.5746", "yard_goal": "25", "four_x_eight_goal": "2", "chair": "Larry Harvey", "chair_email": "larryharvey48@gmail.com", "chair_phone": "386-972-0957", "delivery_contact": "Larry Harvey", "delivery_phone": "386-972-0957", "delivery_email": "larryharvey48@gmail.com", "rec_email": "larryharvey48@gmail.com", "rec_website": "https://putnamrec.com/", "meeting_location": "TBD", "region": "Northeast - St. Johns/Putnam Hub", "status": "chair_complete", "followup": "Older sources (pre-2024) listed Tom Williams as chair; florida.gop currently shows Larry Harvey. Verify before contact. [Research 2026-05-01]", "last_update": "2026-05-01", "update_source": "Web research scrape 2026-05-01", "region_group": "Northeast", "field_updates": [{"field": "rec_website", "old": "", "new": "https://putnamrec.com/", "source": "https://florida.gop/republican-parties/putnam/", "date": "2026-05-01"}], "color": "green", "lat": 29.608, "lng": -81.744}, {"county": "Suwannee", "tier": "D", "wave": "Wave 3", "gop_voters": "16867", "gop_share": "0.6399", "yard_goal": "25", "four_x_eight_goal": "2", "chair": "Lisa Keep", "chair_email": "lisakeep@proton.me", "chair_phone": "301-602-1967", "delivery_contact": "Lisa Keep", "delivery_phone": "301-602-1967", "delivery_email": "lisakeep@proton.me", "rec_email": "lisakeep@proton.me", "rec_website": "", "meeting_location": "Live Oak City Hall, 101 White Ave SE, Live Oak, FL; every first Thursday (meet & greet 6:30PM, meeting 7PM)", "region": "North Central - Lake City/Live Oak Hub", "status": "chair_complete", "followup": "", "last_update": "", "update_source": "", "region_group": "North Central", "color": "green", "lat": 30.1949, "lng": -82.9931}, {"county": "Taylor", "tier": "D", "wave": "Wave 3", "gop_voters": "7437", "gop_share": "0.6436", "yard_goal": "25", "four_x_eight_goal": "2", "chair": "Christy Moody", "chair_email": "christy.moody31@gmail.com", "chair_phone": "850-838-7900", "delivery_contact": "Christy Moody", "delivery_phone": "850-838-7900", "delivery_email": "christy.moody31@gmail.com", "rec_email": "christy.moody31@gmail.com", "rec_website": "", "meeting_location": "The Backdoor Bistro, 124 S. Jefferson Street, Perry, FL 32347; 2nd Thursday monthly at 6PM", "region": "Panhandle East / Big Bend - Perry Hub", "status": "chair_complete", "followup": "", "last_update": "", "update_source": "", "region_group": "Panhandle", "color": "green", "lat": 30.0202, "lng": -83.6133}, {"county": "Union", "tier": "D", "wave": "Wave 3", "gop_voters": "4874", "gop_share": "0.6774", "yard_goal": "25", "four_x_eight_goal": "2", "chair": "Vince Brown", "chair_email": "vince@brownbaginteractive.com", "chair_phone": "352-283-6312", "delivery_contact": "Vince Brown", "delivery_phone": "352-283-6312", "delivery_email": "vince@brownbaginteractive.com", "rec_email": "vince@brownbaginteractive.com", "rec_website": "https://unioncounty.gop/", "meeting_location": "Lake Butler; last Tuesday of each month", "region": "North Central - Lake Butler/Lake City Hub", "status": "chair_complete", "followup": "", "last_update": "", "update_source": "", "region_group": "North Central", "color": "green", "lat": 30.0524, "lng": -82.3737}, {"county": "Wakulla", "tier": "D", "wave": "Wave 3", "gop_voters": "13931", "gop_share": "0.5505", "yard_goal": "25", "four_x_eight_goal": "2", "chair": "Fred Nichols", "chair_email": "", "chair_phone": "", "delivery_contact": "Chris Russell", "delivery_phone": "850-879-1091", "delivery_email": "fcrussell92@gmail.com", "rec_email": "fcrussell92@gmail.com", "rec_website": "", "meeting_location": "Meeting location varies; date/frequency varies", "region": "Panhandle East / Big Bend - Tallahassee Hub", "status": "delivery_only", "followup": "Chair attribution may be stale: Florida Politics (2022) reported Mike Watkins elected chair. Verify directly with state party. [Research 2026-05-01]", "last_update": "", "update_source": "", "region_group": "Panhandle", "color": "white", "lat": 30.1465, "lng": -84.376}, {"county": "Walton", "tier": "D", "wave": "Wave 3", "gop_voters": "41749", "gop_share": "0.6844", "yard_goal": "25", "four_x_eight_goal": "4", "chair": "Mary Howard", "chair_email": "WaltonFLRepublicanChair@gmail.com", "chair_phone": "713-962-8976", "delivery_contact": "Mary Howard", "delivery_phone": "713-962-8976", "delivery_email": "WaltonFLRepublicanChair@gmail.com", "rec_email": "WaltonFLRepublicanChair@gmail.com", "rec_website": "https://waltonflgop.com/", "meeting_location": "Freeport Community Center, 902 FL-20 Suite 102, Freeport, FL 32439; 3rd Tuesday monthly (registration 5:30PM, meeting 6PM)", "region": "Panhandle West - Walton/Freeport Hub", "status": "chair_complete", "followup": "", "last_update": "", "update_source": "", "region_group": "Panhandle", "color": "green", "lat": 30.6306, "lng": -86.1681}, {"county": "Washington", "tier": "D", "wave": "Wave 3", "gop_voters": "9939", "gop_share": "0.6844", "yard_goal": "25", "four_x_eight_goal": "2", "chair": "Malcolm Gainey", "chair_email": "gator91@bellsouth.net", "chair_phone": "850-260-5585", "delivery_contact": "Malcolm Gainey", "delivery_phone": "850-260-5585", "delivery_email": "gator91@bellsouth.net", "rec_email": "gator91@bellsouth.net", "rec_website": "", "meeting_location": "803 Main St., Chipley, FL; every first Monday at 5:45 PM", "region": "Panhandle West - Chipley Hub", "status": "chair_complete", "followup": "", "last_update": "", "update_source": "", "region_group": "Panhandle", "color": "green", "lat": 30.6107, "lng": -85.6605}];
+const YARD_INVENTORY = 2000;
+const FOUR_INVENTORY = 250;
+const OVERRIDES_KEY = 'mike_goal_overrides_v1';
+const SIGNS_KEY = 'placed_4x8_signs_v1';
+const NOTES_KEY = 'mike_field_notes_v2';
+const TAB_KEY = 'mike_active_tab_v1';
+
+const filters = { tier: 'all', region: null, color: null, search: '' };
+const openCards = new Set();
+
+// ====== STORAGE ======
+// Centralized safe writer — surfaces quota/private-mode failures without crashing handlers
+function safeWrite(key, value) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+    return true;
+  } catch (err) {
+    console.error('localStorage write failed for', key, err);
+    if (typeof toast === 'function') toast('Storage error — changes not saved');
+    return false;
+  }
+}
+function loadOverrides() {
+  try {
+    const v = JSON.parse(localStorage.getItem(OVERRIDES_KEY) || '{}');
+    return (v && typeof v === 'object' && !Array.isArray(v)) ? v : {};
+  } catch { return {}; }
+}
+function saveOverrides(o) { return safeWrite(OVERRIDES_KEY, o); }
+// Clamp goal values to non-negative integers to prevent NaN/negative/decimal pollution
+function sanitizeGoal(val) {
+  if (val === null || val === undefined || val === '') return null;
+  const n = Number(val);
+  if (!Number.isFinite(n)) return null;
+  return Math.max(0, Math.floor(n));
+}
+function setOverride(county, field, val) {
+  const o = loadOverrides();
+  if (!o[county] || typeof o[county] !== 'object') o[county] = {};
+  // Baseline is 0 — every county starts empty and the operator allocates as needed.
+  const clean = sanitizeGoal(val);
+  if (clean === null || clean === 0) {
+    delete o[county][field];
+    if (Object.keys(o[county]).length === 0) delete o[county];
+  } else {
+    o[county][field] = clean;
+  }
+  saveOverrides(o);
+}
+function effectiveYardGoal(c) {
+  const o = loadOverrides();
+  if (o[c.county] && typeof o[c.county].yard === 'number') return o[c.county].yard;
+  return 0;
+}
+function effectiveFourGoal(c) {
+  const o = loadOverrides();
+  if (o[c.county] && typeof o[c.county].four === 'number') return o[c.county].four;
+  return 0;
+}
+function isOverridden(c, field) {
+  const o = loadOverrides();
+  return !!(o[c.county] && typeof o[c.county][field] === 'number');
+}
+
+function loadSigns() {
+  try {
+    const v = JSON.parse(localStorage.getItem(SIGNS_KEY) || '[]');
+    return Array.isArray(v) ? v : [];
+  } catch { return []; }
+}
+function saveSigns(s) { return safeWrite(SIGNS_KEY, s); }
+function addSign(sign) { const s = loadSigns(); s.push(sign); saveSigns(s); }
+function deleteSign(id) {
+  const all = loadSigns();
+  const removed = all.find(s => s.id === id);
+  saveSigns(all.filter(s => s.id !== id));
+  return removed;
+}
+function signsFor(county) { return loadSigns().filter(s => s.county === county); }
+
+function loadNotes() {
+  try {
+    const v = JSON.parse(localStorage.getItem(NOTES_KEY) || '[]');
+    return Array.isArray(v) ? v : [];
+  } catch { return []; }
+}
+function saveNotes(n) { return safeWrite(NOTES_KEY, n); }
+function addNote(note) { const n = loadNotes(); n.push(note); saveNotes(n); }
+function deleteNote(id) {
+  const all = loadNotes();
+  const removed = all.find(n => n.id === id);
+  saveNotes(all.filter(n => n.id !== id));
+  return removed;
+}
+function notesFor(county) {
+  return loadNotes().filter(n => n.county === county).sort((a,b) => b.ts.localeCompare(a.ts));
+}
+function formatTs(iso) {
+  const d = new Date(iso);
+  return d.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+}
+
+// ====== TOTALS ======
+function recomputeTotals() {
+  const yardSum = COUNTIES.reduce((a,c) => a + effectiveYardGoal(c), 0);
+  const fourSum = COUNTIES.reduce((a,c) => a + effectiveFourGoal(c), 0);
+  const yardRem = YARD_INVENTORY - yardSum;
+  const fourRem = FOUR_INVENTORY - fourSum;
+  const yEl = document.getElementById('st-yard-rem');
+  const fEl = document.getElementById('st-four-rem');
+  yEl.textContent = Math.abs(yardRem).toLocaleString();
+  fEl.textContent = Math.abs(fourRem).toLocaleString();
+  yEl.classList.toggle('neg', yardRem < 0);
+  fEl.classList.toggle('neg', fourRem < 0);
+  // bar fill = allocated %
+  const yPct = Math.min(100, (yardSum / YARD_INVENTORY) * 100);
+  const fPct = Math.min(100, (fourSum / FOUR_INVENTORY) * 100);
+  const yBar = document.getElementById('st-yard-bar');
+  const fBar = document.getElementById('st-four-bar');
+  yBar.style.width = yPct + '%';
+  fBar.style.width = fPct + '%';
+  yBar.classList.toggle('over', yardRem < 0);
+  fBar.classList.toggle('over', fourRem < 0);
+
+  const signs = loadSigns();
+  const placed = signs.filter(s => s.status === 'placed').length;
+  const scheduled = signs.filter(s => s.status === 'scheduled').length;
+  const sumEl = document.getElementById('signs-summary');
+  if (sumEl) {
+    sumEl.innerHTML = `
+      <span class="dot-wrap"><span style="color:var(--green)">●</span> <b>${placed}</b> placed</span>
+      <span class="dot-wrap"><span style="color:var(--orange)">●</span> <b>${scheduled}</b> scheduled</span>
+    `;
+  }
+}
+
+// ====== HELPERS ======
+function esc(s) {
+  if (s === null || s === undefined) return '';
+  return String(s).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+}
+function fmtPhone(p) {
+  if (!p || String(p).toLowerCase() === 'pending' || String(p).toLowerCase() === 'none') return '';
+  return p;
+}
+function telLink(p) {
+  if (!fmtPhone(p)) return '';
+  const digits = String(p).replace(/\D/g,'');
+  return `tel:+1${digits.slice(-10)}`;
+}
+function todayStr() {
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+
+// dynamic sticky header offset
+function setHeaderOffset() {
+  const h = document.querySelector('.app-header');
+  if (h) document.documentElement.style.setProperty('--header-h', h.offsetHeight + 'px');
+}
+
+// ====== RENDERING ======
+function renderList() {
+  const list = document.getElementById('list');
+  const filtered = COUNTIES.filter(c => {
+    if (filters.tier !== 'all' && c.tier !== filters.tier) return false;
+    if (filters.region && c.region_group !== filters.region) return false;
+    if (filters.color && c.color !== filters.color) return false;
+    if (filters.search) {
+      const q = filters.search.toLowerCase();
+      if (!c.county.toLowerCase().includes(q) &&
+          !(c.chair||'').toLowerCase().includes(q) &&
+          !(c.delivery_contact||'').toLowerCase().includes(q)) return false;
+    }
+    return true;
+  });
+
+  document.getElementById('result-count').textContent =
+    filtered.length + (filtered.length === 1 ? ' county' : ' counties');
+
+  if (filtered.length === 0) {
+    list.innerHTML = '<div class="empty">No counties match these filters.</div>';
+    return;
+  }
+
+  list.innerHTML = filtered.map(c => renderCard(c)).join('');
+}
+
+const STATUS_TEXT = { green: 'Will Take', orange: 'No HQ', white: 'No Chair Contact' };
+function renderCard(c) {
+  const isOpen = openCards.has(c.county);
+  const cPhone = fmtPhone(c.chair_phone);
+  const dPhone = fmtPhone(c.delivery_phone);
+  const yard = effectiveYardGoal(c);
+  const four = effectiveFourGoal(c);
+  const yardMod = isOverridden(c, 'yard');
+  const fourMod = isOverridden(c, 'four');
+  const signs = signsFor(c.county);
+  const notes = notesFor(c.county);
+  const cId = 'card-' + c.county.replace(/[^a-z0-9]/gi, '_');
+  const statusLabel = STATUS_TEXT[c.color] || '';
+
+  return `
+    <div class="card color-${c.color} ${isOpen ? 'open' : ''}" data-county="${esc(c.county)}">
+      <div class="card-head" data-action="toggle" role="button" tabindex="0"
+           aria-expanded="${isOpen ? 'true' : 'false'}" aria-controls="${cId}-body"
+           aria-label="${esc(c.county)} county, status ${esc(statusLabel)}, tier ${esc(c.tier)}, ${isOpen ? 'expanded' : 'collapsed'}">
+        <div class="card-top-l">
+          <div class="county-row">
+            <span class="color-dot ${c.color}" aria-hidden="true"></span>
+            <span class="county-name">${esc(c.county)}</span>
+            <span class="status-text ${c.color}">${esc(statusLabel)}</span>
+            ${notes.length ? `<span class="note-badge">${notes.length} note${notes.length===1?'':'s'}</span>` : ''}
+            ${signs.length ? `<span class="signs-tag" aria-label="${signs.length} 4 by 8 signs logged">${signs.length}</span>` : ''}
+          </div>
+          <div class="card-meta">
+            <span class="meta-stat">
+              <span class="goal-edit ${yardMod ? 'modified' : ''}">
+                <input type="number" min="0" step="1" inputmode="numeric" class="goal-input"
+                       data-county="${esc(c.county)}" data-field="yard" value="${yard}"
+                       aria-label="${esc(c.county)} yard sign goal"
+                       onclick="event.stopPropagation()">
+              </span>
+              <span class="lbl">yard</span>
+            </span>
+            <span class="meta-stat">
+              <span class="goal-edit ${fourMod ? 'modified' : ''}">
+                <input type="number" min="0" step="1" inputmode="numeric" class="goal-input"
+                       data-county="${esc(c.county)}" data-field="four" value="${four}"
+                       aria-label="${esc(c.county)} 4 by 8 sign goal"
+                       onclick="event.stopPropagation()">
+              </span>
+              <span class="lbl">4×8</span>
+            </span>
+            ${(yardMod || fourMod) ? `<button type="button" class="goal-reset" data-action="reset-goals" data-county="${esc(c.county)}" aria-label="Reset ${esc(c.county)} goals to baseline" title="Reset to baseline">↺</button>` : ''}
+            ${c.chair ? `<span class="meta-stat"><span class="lbl">chair</span> <b style="font-weight:500;">${esc(c.chair.split(' ').slice(-1)[0])}</b></span>` : ''}
+          </div>
+        </div>
+        <div class="card-top-r">
+          <span class="tier-badge ${c.tier}">${c.tier}</span>
+          <span class="chevron" aria-hidden="true">›</span>
+        </div>
+      </div>
+      <div class="card-body" id="${cId}-body">
+        <div class="body-grid">
+          ${c.field_updates && c.field_updates.length ? `
+          <div class="panel audit-panel span-2">
+            <div class="panel-title">Recent updates <span class="count">${c.field_updates.length}</span></div>
+            <ul class="audit-list">
+              ${c.field_updates.slice().reverse().map(u => `
+                <li class="audit-item">
+                  <div class="a-row">
+                    <span class="a-date">${esc(u.date||'')}</span>
+                    <span class="a-field">${esc(u.field||'')}</span>
+                    ${u.old ? `<span class="a-old">${esc(String(u.old).slice(0,60))}</span>` : ''}
+                    <span class="a-new">${esc(String(u.new||'').slice(0,80))}</span>
+                  </div>
+                  ${u.source ? `<div class="a-src">source: <a href="${esc(u.source)}" target="_blank" rel="noopener">${esc(u.source.replace(/^https?:\/\//,'').slice(0,55))}…</a></div>` : ''}
+                </li>
+              `).join('')}
+            </ul>
+          </div>` : ''}
+          <div class="panel">
+            <div class="panel-title">Contacts</div>
+            ${c.chair ? `
+              <div class="detail-section">
+                <div class="detail-label">Chair</div>
+                <div class="detail-val">${esc(c.chair)}</div>
+                <div class="contact-actions">
+                  ${cPhone ? `<a class="btn sm" href="${telLink(c.chair_phone)}">📞 ${esc(cPhone)}</a>` : ''}
+                  ${c.chair_email ? `<a class="btn ghost sm" href="mailto:${esc(c.chair_email)}">✉ Email</a>` : ''}
+                </div>
+              </div>` : ''}
+            ${c.delivery_contact && c.delivery_contact !== c.chair ? `
+              <div class="detail-section">
+                <div class="detail-label">Delivery</div>
+                <div class="detail-val">${esc(c.delivery_contact)}</div>
+                <div class="contact-actions">
+                  ${dPhone ? `<a class="btn sm" href="${telLink(c.delivery_phone)}">📞 ${esc(dPhone)}</a>` : ''}
+                  ${c.delivery_email ? `<a class="btn ghost sm" href="mailto:${esc(c.delivery_email)}">✉ Email</a>` : ''}
+                </div>
+              </div>` : ''}
+          </div>
+
+          <div class="panel">
+            <div class="panel-title">Details</div>
+            ${c.meeting_location ? `
+              <div class="detail-section">
+                <div class="detail-label">Meeting / Drop Location</div>
+                <div class="detail-val">${esc(c.meeting_location)}</div>
+              </div>` : ''}
+            ${c.rec_website ? `
+              <div class="detail-section">
+                <div class="detail-label">REC Website</div>
+                <div class="detail-val"><a href="${esc(c.rec_website)}" target="_blank" rel="noopener">${esc(c.rec_website.replace(/^https?:\/\//,''))}</a></div>
+              </div>` : ''}
+            ${c.region ? `
+              <div class="detail-section">
+                <div class="detail-label">Region · GOP Voters · GOP Share</div>
+                <div class="detail-val">${esc(c.region)}<br><b>${esc((parseInt(c.gop_voters||0)).toLocaleString())}</b> voters · <b>${c.gop_share ? (parseFloat(c.gop_share)*100).toFixed(1)+'%' : '—'}</b> share</div>
+              </div>` : ''}
+          </div>
+
+          <div class="panel span-2">
+            <div class="panel-title">4×8 Signs <span class="count">${signs.length}</span></div>
+            <div class="sign-list">
+              ${signs.length === 0 ? '<div class="empty-mini">No 4×8 signs logged.</div>' :
+                signs.map(s => `
+                  <div class="sign-item ${s.status}">
+                    <span class="sign-status ${s.status}">${s.status}</span>
+                    <span class="sign-meta"><span class="date">${esc(s.date||'')}</span>${esc(s.address||'(no address)')}</span>
+                    <button type="button" class="sign-del" data-action="del-sign" data-id="${s.id}" aria-label="Delete sign at ${esc(s.address||s.county)}" title="Delete">×</button>
+                  </div>
+                `).join('')}
+            </div>
+            <button class="btn ghost sm" data-action="add-sign-toggle" data-county="${esc(c.county)}">+ Add 4×8 sign</button>
+            <form class="inline-form" data-action="add-sign" data-county="${esc(c.county)}" data-lat="${c.lat||''}" data-lng="${c.lng||''}">
+              <label>Status</label>
+              <select name="status">
+                <option value="scheduled">Scheduled</option>
+                <option value="placed">Placed</option>
+              </select>
+              <label>Date</label>
+              <input type="date" name="date" value="${todayStr()}">
+              <label>Address / Location</label>
+              <input name="address" placeholder="e.g. 123 Main St, Tampa, FL">
+              <label>Lat / Lng (optional — defaults to county center)</label>
+              <input name="latlng" placeholder="${c.lat||''}, ${c.lng||''}">
+              <div class="form-actions">
+                <button type="submit" class="btn gold sm">Save</button>
+                <button type="button" class="btn ghost sm" data-action="cancel-sign">Cancel</button>
+              </div>
+            </form>
+          </div>
+
+          <div class="panel span-2">
+            <div class="panel-title">Field Notes <span class="count">${notes.length}</span></div>
+            <div>
+              ${notes.length === 0 ? '<div class="empty-mini">No notes yet.</div>' : notes.map(n => `
+                <div class="note-item">
+                  <div class="ts">
+                    <span>${formatTs(n.ts)}${n.status_change ? ' · → '+esc(n.status_change.replace(/_/g,' ')) : ''}</span>
+                    <button type="button" class="note-del" data-action="del-note" data-id="${n.id}" aria-label="Delete note">×</button>
+                  </div>
+                  <div class="body">${esc(n.note)}</div>
+                  ${n.action ? `<div class="action">${esc(n.action)}</div>` : ''}
+                </div>
+              `).join('')}
+            </div>
+            <form class="inline-form always-show" data-action="add-note" data-county="${esc(c.county)}">
+              <label>Status change (optional)</label>
+              <select name="status">
+                <option value="">— No change —</option>
+                <option value="chair_complete">chair_complete</option>
+                <option value="partial_with_delivery">partial_with_delivery</option>
+                <option value="delivery_only">delivery_only</option>
+                <option value="needs_attention">needs_attention</option>
+              </select>
+              <label>Note</label>
+              <textarea name="note" placeholder="What happened on this call/visit…" required></textarea>
+              <label>Action / next step (optional)</label>
+              <input name="action" placeholder="e.g. drop 50 yard signs Tue PM">
+              <div class="form-actions">
+                <button type="submit" class="btn gold sm">Save Note</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// ====== EVENTS ======
+function debounce(fn, ms) {
+  let t;
+  return function() {
+    clearTimeout(t);
+    const args = arguments;
+    t = setTimeout(() => fn.apply(this, args), ms);
+  };
+}
+const _searchDebounced = debounce(() => { renderList(); }, 200);
+document.getElementById('search').addEventListener('input', e => {
+  filters.search = e.target.value.trim();
+  _searchDebounced();
+});
+
+// ====== UNDO TOAST ======
+// Tracks last destructive action; clicking the toast restores it.
+let _lastUndo = null;  // { fn, label, until }
+function showUndoToast(label, undoFn) {
+  _lastUndo = { fn: undoFn, label, until: Date.now() + 5000 };
+  const t = document.getElementById('toast');
+  t.innerHTML = `${label} <button id="undo-btn" type="button" style="margin-left:10px;background:var(--gold);color:var(--navy);border:none;padding:3px 10px;border-radius:99px;font-family:inherit;font-size:11px;font-weight:700;cursor:pointer;text-transform:uppercase;letter-spacing:0.06em;">Undo</button>`;
+  t.classList.add('show');
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => { t.classList.remove('show'); _lastUndo = null; }, 5000);
+  const btn = document.getElementById('undo-btn');
+  if (btn) btn.addEventListener('click', e => {
+    e.stopPropagation();
+    if (_lastUndo && Date.now() < _lastUndo.until) {
+      _lastUndo.fn();
+      _lastUndo = null;
+      t.classList.remove('show');
+      clearTimeout(toast._t);
+      toast('Restored');
+    }
+  });
+}
+
+function wirePillGroup(id) {
+  document.getElementById(id).addEventListener('click', e => {
+    const pill = e.target.closest('.pill');
+    if (!pill) return;
+    const f = pill.dataset.filter;
+    const v = pill.dataset.val;
+    const setActive = (selector, target, on) => {
+      document.querySelectorAll(selector).forEach(p => {
+        const isTarget = p === target && on;
+        p.classList.toggle('active', isTarget);
+        p.setAttribute('aria-pressed', isTarget ? 'true' : 'false');
+      });
+    };
+    if (f === 'tier') {
+      setActive('.pill[data-filter="tier"]', pill, true);
+      filters.tier = v;
+    } else if (f === 'region') {
+      const turnOn = filters.region !== v;
+      setActive('.pill[data-filter="region"]', pill, turnOn);
+      filters.region = turnOn ? v : null;
+    } else if (f === 'color') {
+      const turnOn = filters.color !== v;
+      setActive('.pill[data-filter="color"]', pill, turnOn);
+      filters.color = turnOn ? v : null;
+    }
+    renderList();
+    if (typeof updateFilterBadge === 'function') updateFilterBadge();
+  });
+}
+wirePillGroup('tier-pills');
+wirePillGroup('color-pills');
+wirePillGroup('region-pills');
+
+// Filter drawer toggle + active count
+function updateFilterBadge() {
+  const toggle = document.getElementById('filter-toggle');
+  const badge = document.getElementById('filter-badge');
+  let n = 0;
+  if (filters.tier && filters.tier !== 'all') n++;
+  if (filters.region) n++;
+  if (filters.color) n++;
+  if (n > 0) {
+    badge.textContent = n;
+    badge.style.display = '';
+    toggle.classList.add('has-active');
+  } else {
+    badge.style.display = 'none';
+    toggle.classList.remove('has-active');
+  }
+}
+(function() {
+  const toggle = document.getElementById('filter-toggle');
+  const drawer = document.getElementById('filter-drawer');
+  toggle.addEventListener('click', () => {
+    const open = drawer.classList.toggle('open');
+    toggle.classList.toggle('open', open);
+    toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
+})();
+
+function toggleCard(card) {
+  if (!card) return;
+  const county = card.dataset.county;
+  const head = card.querySelector('.card-head');
+  if (openCards.has(county)) {
+    openCards.delete(county);
+    card.classList.remove('open');
+    if (head) head.setAttribute('aria-expanded', 'false');
+  } else {
+    openCards.add(county);
+    card.classList.add('open');
+    if (head) head.setAttribute('aria-expanded', 'true');
+  }
+}
+document.getElementById('list').addEventListener('click', e => {
+  const head = e.target.closest('[data-action="toggle"]');
+  if (head && !e.target.classList.contains('goal-input') && !e.target.classList.contains('goal-reset') && !e.target.closest('.goal-edit')
+      && !e.target.closest('.sign-del') && !e.target.closest('.note-del')
+      && !e.target.closest('[data-action="add-sign-toggle"]')
+      && !e.target.closest('[data-action="cancel-sign"]')
+      && !e.target.closest('[data-action="del-sign"]')
+      && !e.target.closest('[data-action="del-note"]')
+      && !e.target.closest('[data-action="reset-goals"]')
+      && !e.target.closest('button')) {
+    toggleCard(head.closest('.card'));
+    return;
+  }
+  const reset = e.target.closest('[data-action="reset-goals"]');
+  if (reset) {
+    e.stopPropagation();
+    const county = reset.dataset.county;
+    const o = loadOverrides();
+    const prev = o[county];
+    if (prev) {
+      delete o[county];
+      saveOverrides(o);
+      renderList();
+      recomputeTotals();
+      showUndoToast(`Reset ${county} goals`, () => {
+        const cur = loadOverrides();
+        cur[county] = prev;
+        saveOverrides(cur);
+        renderList();
+        recomputeTotals();
+      });
+    }
+    return;
+  }
+  const addToggle = e.target.closest('[data-action="add-sign-toggle"]');
+  if (addToggle) {
+    const card = addToggle.closest('.card');
+    const form = card.querySelector('.inline-form[data-action="add-sign"]');
+    form.classList.toggle('open');
+    return;
+  }
+  const cancel = e.target.closest('[data-action="cancel-sign"]');
+  if (cancel) {
+    cancel.closest('.inline-form').classList.remove('open');
+    return;
+  }
+  const del = e.target.closest('[data-action="del-sign"]');
+  if (del) {
+    e.stopPropagation();
+    const removed = deleteSign(del.dataset.id);
+    renderList();
+    recomputeTotals();
+    if (window._mapDirty !== undefined) window._mapDirty = true;
+    if (removed) {
+      showUndoToast(`Deleted 4×8 sign · ${removed.county}`, () => {
+        addSign(removed);
+        renderList();
+        recomputeTotals();
+        if (window._mapDirty !== undefined) window._mapDirty = true;
+      });
+    }
+    return;
+  }
+  const delNote = e.target.closest('[data-action="del-note"]');
+  if (delNote) {
+    e.stopPropagation();
+    const removed = deleteNote(delNote.dataset.id);
+    renderList();
+    if (removed) {
+      showUndoToast(`Deleted note · ${removed.county}`, () => {
+        addNote(removed);
+        renderList();
+      });
+    }
+  }
+});
+
+// Keyboard support for card-head (Enter / Space toggles expand)
+document.getElementById('list').addEventListener('keydown', e => {
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  const head = e.target.closest('[data-action="toggle"]');
+  if (!head) return;
+  // Skip if user is typing in a goal input (Enter in number inputs should commit, not toggle)
+  if (e.target.classList.contains('goal-input') || e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
+  if (e.target.closest('button') && e.target !== head) return;
+  e.preventDefault();
+  toggleCard(head.closest('.card'));
+});
+
+document.getElementById('list').addEventListener('change', e => {
+  const inp = e.target.closest('.goal-input');
+  if (!inp) return;
+  const val = inp.value.trim();
+  setOverride(inp.dataset.county, inp.dataset.field, val === '' ? null : Number(val));
+  recomputeTotals();
+  // visual: toggle modified state
+  const card = inp.closest('.card');
+  if (card) {
+    const c = COUNTIES.find(x => x.county === card.dataset.county);
+    if (c) {
+      const yardOver = isOverridden(c, 'yard');
+      const fourOver = isOverridden(c, 'four');
+      card.querySelectorAll('.goal-edit').forEach(g => {
+        const inputEl = g.querySelector('.goal-input');
+        const isYard = inputEl.dataset.field === 'yard';
+        g.classList.toggle('modified', isYard ? yardOver : fourOver);
+      });
+    }
+  }
+});
+
+document.getElementById('list').addEventListener('submit', e => {
+  const signForm = e.target.closest('[data-action="add-sign"]');
+  if (signForm) {
+    e.preventDefault();
+    const county = signForm.dataset.county;
+    const fd = new FormData(signForm);
+    let lat = parseFloat(signForm.dataset.lat) || null;
+    let lng = parseFloat(signForm.dataset.lng) || null;
+    const ll = (fd.get('latlng')||'').trim();
+    if (ll) {
+      const parts = ll.split(/[, ]+/).map(parseFloat).filter(n => !isNaN(n));
+      if (parts.length >= 2) { lat = parts[0]; lng = parts[1]; }
+    }
+    addSign({
+      id: Date.now() + '-' + Math.random().toString(36).slice(2, 8),
+      county,
+      status: fd.get('status'),
+      date: fd.get('date') || todayStr(),
+      address: (fd.get('address')||'').trim(),
+      lat, lng
+    });
+    toast('Sign saved · ' + county);
+    renderList();
+    recomputeTotals();
+    if (window._mapDirty !== undefined) window._mapDirty = true;
+    return;
+  }
+  const noteForm = e.target.closest('[data-action="add-note"]');
+  if (noteForm) {
+    e.preventDefault();
+    const county = noteForm.dataset.county;
+    const fd = new FormData(noteForm);
+    const body = (fd.get('note')||'').trim();
+    if (!body) return;
+    addNote({
+      id: Date.now() + '-' + Math.random().toString(36).slice(2, 8),
+      county,
+      ts: new Date().toISOString(),
+      status_change: fd.get('status') || null,
+      note: body,
+      action: (fd.get('action')||'').trim()
+    });
+    noteForm.reset();
+    toast('Note saved · ' + county);
+    renderList();
+  }
+});
+
+// ====== TABS ======
+function setTab(name) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.toggle('active', p.id === name + '-tab'));
+  localStorage.setItem(TAB_KEY, name);
+  if (name === 'map') initOrRefreshMap();
+}
+document.querySelectorAll('.tab-btn').forEach(b => {
+  b.addEventListener('click', () => setTab(b.dataset.tab));
+});
+
+// ====== MAP ======
+let _map = null, _countyLayer = null, _scheduledLayer = null, _placedLayer = null;
+window._mapDirty = false;
+
+function initOrRefreshMap() {
+  if (typeof L === 'undefined') {
+    setTimeout(initOrRefreshMap, 200);
+    return;
+  }
+  if (!_map) {
+    _map = L.map('map', { zoomControl: true }).setView([27.7, -83.5], 7);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '© OpenStreetMap contributors'
+    }).addTo(_map);
+    _countyLayer = L.layerGroup().addTo(_map);
+    _scheduledLayer = L.layerGroup().addTo(_map);
+    _placedLayer = L.layerGroup().addTo(_map);
+    document.getElementById('lyr-counties').addEventListener('change', e => {
+      e.target.checked ? _map.addLayer(_countyLayer) : _map.removeLayer(_countyLayer);
+    });
+    document.getElementById('lyr-scheduled').addEventListener('change', e => {
+      e.target.checked ? _map.addLayer(_scheduledLayer) : _map.removeLayer(_scheduledLayer);
+    });
+    document.getElementById('lyr-placed').addEventListener('change', e => {
+      e.target.checked ? _map.addLayer(_placedLayer) : _map.removeLayer(_placedLayer);
+    });
+    document.getElementById('open-candidate-map').addEventListener('click', () => openMapIframe('./sign_candidates_map.html', '4×8 Candidate Sites'));
+    document.getElementById('open-status-map').addEventListener('click', () => openMapIframe('./sign_status_map.html', 'County Status Map'));
+    document.getElementById('map-iframe-close').addEventListener('click', closeMapIframe);
+    drawMap();
+  } else if (window._mapDirty) {
+    drawMap();
+    window._mapDirty = false;
+  }
+  setTimeout(() => _map.invalidateSize(), 50);
+}
+
+function colorHex(c) {
+  if (c === 'green') return '#2e7a44';
+  if (c === 'orange') return '#d27a1f';
+  if (c === 'white') return '#ffffff';
+  return '#888';
+}
+
+function jumpToCounty(county) {
+  setTab('field');
+  openCards.add(county);
+  renderList();
+  // Wait one rAF so DOM is rebuilt, then scroll
+  requestAnimationFrame(() => {
+    const el = document.querySelector(`.card[data-county="${CSS.escape(county)}"]`);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      const head = el.querySelector('.card-head');
+      if (head) head.focus();
+    }
+  });
+}
+function drawMap() {
+  _countyLayer.clearLayers();
+  _scheduledLayer.clearLayers();
+  _placedLayer.clearLayers();
+
+  COUNTIES.forEach(c => {
+    if (!c.lat || !c.lng) return;
+    const yard = effectiveYardGoal(c);
+    const four = effectiveFourGoal(c);
+    const sigs = signsFor(c.county);
+    const marker = L.circleMarker([c.lat, c.lng], {
+      radius: 10,
+      fillColor: colorHex(c.color),
+      color: '#15151a',
+      weight: 1.5,
+      opacity: 1,
+      fillOpacity: 0.85
+    }).bindPopup(`
+      <b>${esc(c.county)}</b> · Tier ${esc(c.tier||'')}<br>
+      <span style="color:#666;">Chair:</span> ${esc(c.chair||'—')}<br>
+      <span style="color:#666;">Yard goal:</span> <b>${yard}</b> · <span style="color:#666;">4×8 goal:</span> <b>${four}</b><br>
+      <span style="color:#666;">4×8 logged:</span> <b>${sigs.length}</b><br>
+      <button class="popup-jump" data-jump-county="${esc(c.county)}" type="button">Open card →</button>
+    `);
+    _countyLayer.addLayer(marker);
+  });
+
+  loadSigns().forEach(s => {
+    if (!s.lat || !s.lng) return;
+    const isPlaced = s.status === 'placed';
+    const layer = isPlaced ? _placedLayer : _scheduledLayer;
+    const icon = L.divIcon({
+      className: 'sign-pin',
+      html: `<div style="font-size:24px; line-height:1; transform:translate(-50%,-100%); position:relative; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.4));">${isPlaced ? '🚩' : '📍'}</div>`,
+      iconSize: [28, 28],
+      iconAnchor: [14, 28]
+    });
+    const m = L.marker([s.lat, s.lng], { icon }).bindPopup(`
+      <b>${esc(s.county)}</b> · ${esc(s.status)}<br>
+      <span style="color:#666;">Date:</span> ${esc(s.date||'')}<br>
+      ${esc(s.address||'(no address)')}<br>
+      <button class="popup-jump" data-jump-county="${esc(s.county)}" type="button">Open card →</button>
+    `);
+    layer.addLayer(m);
+  });
+}
+
+// Delegated handler for popup jump buttons (popups attach to map pane, not #list)
+document.addEventListener('click', e => {
+  const jb = e.target.closest('[data-jump-county]');
+  if (jb) {
+    e.preventDefault();
+    jumpToCounty(jb.dataset.jumpCounty);
+  }
+});
+
+function openMapIframe(src, title) {
+  const iframe = document.getElementById('map-iframe');
+  iframe.src = src;
+  document.getElementById('map-iframe-title').textContent = title || 'Source Map';
+  document.getElementById('map-iframe-overlay').classList.add('open');
+}
+function closeMapIframe() {
+  document.getElementById('map-iframe-overlay').classList.remove('open');
+  // Use about:blank to avoid stale-content flash on next open
+  document.getElementById('map-iframe').src = 'about:blank';
+}
+// Escape closes iframe overlay if open
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    const ov = document.getElementById('map-iframe-overlay');
+    if (ov && ov.classList.contains('open')) {
+      e.preventDefault();
+      closeMapIframe();
+    }
+  }
+});
+
+// ====== EXPORT MENU ======
+(function() {
+  const trigger = document.getElementById('export-trigger');
+  const menu = document.getElementById('export-menu');
+  function closeMenu() {
+    menu.classList.remove('open');
+    trigger.classList.remove('open');
+    trigger.setAttribute('aria-expanded', 'false');
+  }
+  function openMenu() {
+    menu.classList.add('open');
+    trigger.classList.add('open');
+    trigger.setAttribute('aria-expanded', 'true');
+  }
+  trigger.addEventListener('click', e => {
+    e.stopPropagation();
+    if (menu.classList.contains('open')) closeMenu(); else openMenu();
+  });
+  document.addEventListener('click', e => {
+    if (!menu.contains(e.target) && e.target !== trigger) closeMenu();
+  });
+  menu.addEventListener('click', e => {
+    if (e.target.closest('button')) {
+      // close after a tick so the action runs first
+      setTimeout(closeMenu, 0);
+    }
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeMenu();
+  });
+})();
+
+// ====== BACKUP / RESTORE ======
+document.getElementById('btn-backup').addEventListener('click', () => {
+  const state = {
+    schema: 'fl-sign-ops-v1',
+    exported_at: new Date().toISOString(),
+    overrides: loadOverrides(),
+    signs: loadSigns(),
+    notes: loadNotes()
+  };
+  const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `field_ops_backup_${todayStr()}.json`;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
+  toast('Backup downloaded');
+});
+document.getElementById('btn-restore').addEventListener('click', () => {
+  document.getElementById('restore-file-input').click();
+});
+document.getElementById('restore-file-input').addEventListener('change', e => {
+  const file = e.target.files && e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      if (!data || data.schema !== 'fl-sign-ops-v1') {
+        toast('Not a valid backup file');
+        return;
+      }
+      const counts = `${Object.keys(data.overrides||{}).length} overrides · ${(data.signs||[]).length} signs · ${(data.notes||[]).length} notes`;
+      if (!confirm(`Restore ${counts}? This replaces all current local state.`)) return;
+      saveOverrides(data.overrides || {});
+      saveSigns(data.signs || []);
+      saveNotes(data.notes || []);
+      renderList();
+      recomputeTotals();
+      if (window._mapDirty !== undefined) window._mapDirty = true;
+      toast('Restore complete · ' + counts);
+    } catch (err) {
+      console.error(err);
+      toast('Could not parse backup file');
+    } finally {
+      e.target.value = ''; // allow re-selecting same file
+    }
+  };
+  reader.readAsText(file);
+});
+
+// ====== EXPORT: PRINT ======
+// Snapshot/restore openCards so the user's view isn't permanently expanded after printing
+document.getElementById('btn-print').addEventListener('click', () => {
+  const snapshot = new Set(openCards);
+  COUNTIES.forEach(c => openCards.add(c.county));
+  renderList();
+  // Two rAF cycles to let layout/paint settle, then print, then restore
+  const restore = () => {
+    openCards.clear();
+    snapshot.forEach(c => openCards.add(c));
+    renderList();
+    window.removeEventListener('afterprint', restore);
+  };
+  window.addEventListener('afterprint', restore);
+  requestAnimationFrame(() => requestAnimationFrame(() => window.print()));
+});
+
+// ====== EXPORT: EXCEL ======
+function toNum(v) { if (v === null || v === undefined || v === '') return null; const n = Number(v); return Number.isFinite(n) ? n : null; }
+function toDate(v) { if (!v) return null; const d = new Date(/^\d{4}-\d{2}-\d{2}$/.test(v) ? v + 'T00:00:00' : v); return isNaN(d.getTime()) ? null : d; }
+// json_to_sheet on an empty array produces a header-less sheet — use explicit headers so empty exports still document the schema
+function sheetWithHeaders(rows, headers) {
+  if (!rows.length) return XLSX.utils.aoa_to_sheet([headers]);
+  return XLSX.utils.json_to_sheet(rows, { header: headers });
+}
+document.getElementById('btn-excel').addEventListener('click', () => {
+  if (typeof XLSX === 'undefined') { toast('XLSX still loading…'); return; }
+  const countiesHeaders = ['County','Tier','Wave','Color','Status','Region','Region_Group','GOP_Voters','GOP_Share','Yard_Goal_Baseline','Yard_Goal_Effective','Four_x_Eight_Goal_Baseline','Four_x_Eight_Goal_Effective','Chair','Chair_Phone','Chair_Email','Delivery_Contact','Delivery_Phone','Delivery_Email','REC_Email','REC_Website','Meeting_Location','Lat','Lng','Last_Update','Update_Source'];
+  const countiesRows = COUNTIES.map(c => ({
+    County: c.county, Tier: c.tier, Wave: c.wave,
+    Color: c.color, Status: c.status,
+    Region: c.region, Region_Group: c.region_group,
+    GOP_Voters: toNum(c.gop_voters),
+    GOP_Share: toNum(c.gop_share),
+    Yard_Goal_Baseline: toNum(c.yard_goal),
+    Yard_Goal_Effective: effectiveYardGoal(c),
+    Four_x_Eight_Goal_Baseline: toNum(c.four_x_eight_goal),
+    Four_x_Eight_Goal_Effective: effectiveFourGoal(c),
+    Chair: c.chair, Chair_Phone: c.chair_phone, Chair_Email: c.chair_email,
+    Delivery_Contact: c.delivery_contact, Delivery_Phone: c.delivery_phone, Delivery_Email: c.delivery_email,
+    REC_Email: c.rec_email, REC_Website: c.rec_website,
+    Meeting_Location: c.meeting_location,
+    Lat: toNum(c.lat), Lng: toNum(c.lng),
+    Last_Update: toDate(c.last_update), Update_Source: c.update_source
+  }));
+  const signsHeaders = ['ID','County','Status','Date','Address','Lat','Lng'];
+  const signsRows = loadSigns().map(s => ({
+    ID: s.id, County: s.county, Status: s.status,
+    Date: toDate(s.date), Address: s.address,
+    Lat: toNum(s.lat), Lng: toNum(s.lng)
+  }));
+  const notesHeaders = ['Timestamp','County','Status_Change','Note','Action'];
+  const notesRows = loadNotes().sort((a,b) => b.ts.localeCompare(a.ts)).map(n => ({
+    Timestamp: toDate(n.ts), County: n.county,
+    Status_Change: n.status_change || '',
+    Note: n.note, Action: n.action || ''
+  }));
+  const totalsRows = [
+    { Item: 'Yard Inventory', Total: YARD_INVENTORY, Allocated: COUNTIES.reduce((a,c)=>a+effectiveYardGoal(c),0), Remaining: YARD_INVENTORY - COUNTIES.reduce((a,c)=>a+effectiveYardGoal(c),0) },
+    { Item: '4×8 Inventory', Total: FOUR_INVENTORY, Allocated: COUNTIES.reduce((a,c)=>a+effectiveFourGoal(c),0), Remaining: FOUR_INVENTORY - COUNTIES.reduce((a,c)=>a+effectiveFourGoal(c),0) }
+  ];
+  // Audit trail — flatten field_updates from any patched county
+  const auditHeaders = ['Date','County','Field','Old_Value','New_Value','Source'];
+  const auditRows = [];
+  COUNTIES.forEach(c => {
+    if (Array.isArray(c.field_updates)) {
+      c.field_updates.forEach(u => auditRows.push({
+        Date: toDate(u.date), County: c.county,
+        Field: u.field, Old_Value: u.old, New_Value: u.new, Source: u.source
+      }));
+    }
+  });
+  auditRows.sort((a, b) => (b.Date && a.Date) ? b.Date - a.Date : 0);
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(totalsRows), 'Totals');
+  XLSX.utils.book_append_sheet(wb, sheetWithHeaders(countiesRows, countiesHeaders), 'Counties');
+  XLSX.utils.book_append_sheet(wb, sheetWithHeaders(signsRows, signsHeaders), 'Placed_4x8_Signs');
+  XLSX.utils.book_append_sheet(wb, sheetWithHeaders(notesRows, notesHeaders), 'Field_Notes');
+  XLSX.utils.book_append_sheet(wb, sheetWithHeaders(auditRows, auditHeaders), 'Audit_Trail');
+  XLSX.writeFile(wb, `field_ops_${todayStr()}.xlsx`);
+  toast('Excel downloaded');
+});
+
+// ====== EXPORT: GOOGLE CALENDAR (.ics) ======
+function icsEscape(s) {
+  return String(s||'').replace(/\\/g,'\\\\').replace(/;/g,'\\;').replace(/,/g,'\\,').replace(/\n/g,'\\n');
+}
+function fmtICSDate(dateStr) { return dateStr.replace(/-/g,''); }
+function fmtICSStamp(d) {
+  const pad = n => String(n).padStart(2,'0');
+  return d.getUTCFullYear() + pad(d.getUTCMonth()+1) + pad(d.getUTCDate()) + 'T' +
+         pad(d.getUTCHours()) + pad(d.getUTCMinutes()) + pad(d.getUTCSeconds()) + 'Z';
+}
+
+document.getElementById('btn-ical').addEventListener('click', () => {
+  const now = new Date();
+  const stamp = fmtICSStamp(now);
+  const events = [];
+
+  loadSigns().forEach(s => {
+    if (!s.date) return;
+    const start = fmtICSDate(s.date);
+    const d = new Date(s.date + 'T00:00:00');
+    d.setDate(d.getDate() + 1);
+    const end = d.getFullYear() + String(d.getMonth()+1).padStart(2,'0') + String(d.getDate()).padStart(2,'0');
+    events.push([
+      'BEGIN:VEVENT',
+      `UID:sign-${s.id}@flsignops`,
+      `DTSTAMP:${stamp}`,
+      `DTSTART;VALUE=DATE:${start}`,
+      `DTEND;VALUE=DATE:${end}`,
+      `SUMMARY:${icsEscape((s.status==='placed'?'4×8 Placed':'4×8 Scheduled') + ' — ' + s.county)}`,
+      `LOCATION:${icsEscape(s.address||'')}`,
+      `DESCRIPTION:${icsEscape('FL Sign Ops · '+s.county+' · '+s.status)}`,
+      'END:VEVENT'
+    ].join('\r\n'));
+  });
+
+  // REC meetings: only export if we can parse a real cadence into an RRULE.
+  // This avoids the prior bug where every county was dumped as today's all-day event.
+  const DAY_MAP = { sun:'SU', mon:'MO', tue:'TU', tues:'TU', wed:'WE', thu:'TH', thur:'TH', thurs:'TH', fri:'FR', sat:'SA' };
+  const ORDINAL_MAP = { 'first':1, '1st':1, 'second':2, '2nd':2, 'third':3, '3rd':3, 'fourth':4, '4th':4, 'last':-1 };
+  function parseMeetingRRule(text) {
+    if (!text) return null;
+    const t = text.toLowerCase();
+    // "1st thursday", "3rd monday", "second tuesday" etc.
+    const ordRe = /(first|second|third|fourth|last|1st|2nd|3rd|4th)\s+(sun|mon|tue|tues|wed|thu|thur|thurs|fri|sat)(day|nesday|sday|urday)?/;
+    const ordMatch = ordRe.exec(t);
+    let interval = 1;
+    if (/every other|bi[- ]?monthly/.test(t)) interval = 2;
+    if (ordMatch) {
+      const ord = ORDINAL_MAP[ordMatch[1]];
+      const day = DAY_MAP[ordMatch[2]];
+      if (ord && day) {
+        return { rrule: `RRULE:FREQ=MONTHLY;INTERVAL=${interval};BYDAY=${ord}${day}` };
+      }
+    }
+    return null;
+  }
+  function parseMeetingTime(text) {
+    // "6:30 PM", "7PM", "at 6 PM"
+    const m = /(\d{1,2})(?::(\d{2}))?\s*(am|pm)\b/i.exec(text || '');
+    if (!m) return null;
+    let h = parseInt(m[1], 10);
+    const mm = m[2] ? parseInt(m[2], 10) : 0;
+    const ampm = m[3].toLowerCase();
+    if (ampm === 'pm' && h < 12) h += 12;
+    if (ampm === 'am' && h === 12) h = 0;
+    return { h, mm };
+  }
+  // Find next occurrence date for a given BYDAY/BYSETPOS
+  function nextOccurrence(ord, dayCode) {
+    const dayIdx = { SU:0, MO:1, TU:2, WE:3, TH:4, FR:5, SA:6 }[dayCode];
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    // Look in current and next 2 months for the matching ordinal weekday
+    for (let mo = 0; mo < 3; mo++) {
+      const d = new Date(today.getFullYear(), today.getMonth() + mo, 1);
+      const monthMatches = [];
+      while (d.getMonth() === today.getMonth() + mo - (mo > 0 && d.getMonth() === today.getMonth() ? 0 : 0)) {
+        if (d.getDay() === dayIdx) monthMatches.push(new Date(d));
+        d.setDate(d.getDate() + 1);
+        if (monthMatches.length > 5) break;
+      }
+      const pick = ord === -1 ? monthMatches[monthMatches.length - 1] : monthMatches[ord - 1];
+      if (pick && pick >= today) return pick;
+    }
+    return null;
+  }
+  let recCount = 0, recSkipped = 0;
+  COUNTIES.forEach(c => {
+    if (!c.meeting_location) { recSkipped++; return; }
+    const rule = parseMeetingRRule(c.meeting_location);
+    if (!rule) { recSkipped++; return; }
+    const time = parseMeetingTime(c.meeting_location) || { h: 19, mm: 0 }; // default 7 PM
+    const ordMatch = /(first|second|third|fourth|last|1st|2nd|3rd|4th)\s+(sun|mon|tue|tues|wed|thu|thur|thurs|fri|sat)/i.exec(c.meeting_location);
+    const ord = ORDINAL_MAP[ordMatch[1].toLowerCase()];
+    const dayCode = DAY_MAP[ordMatch[2].toLowerCase()];
+    const first = nextOccurrence(ord, dayCode);
+    if (!first) { recSkipped++; return; }
+    const dt = new Date(first.getFullYear(), first.getMonth(), first.getDate(), time.h, time.mm);
+    const dtEnd = new Date(dt.getTime() + 90 * 60 * 1000); // 90 min default
+    const fmt = d => d.getFullYear() + String(d.getMonth()+1).padStart(2,'0') + String(d.getDate()).padStart(2,'0') +
+                     'T' + String(d.getHours()).padStart(2,'0') + String(d.getMinutes()).padStart(2,'0') + '00';
+    events.push([
+      'BEGIN:VEVENT',
+      `UID:rec-${c.county.replace(/\s+/g,'_')}-${dt.getFullYear()}${String(dt.getMonth()+1).padStart(2,'0')}@flsignops`,
+      `DTSTAMP:${stamp}`,
+      `DTSTART;TZID=America/New_York:${fmt(dt)}`,
+      `DTEND;TZID=America/New_York:${fmt(dtEnd)}`,
+      rule.rrule,
+      `SUMMARY:${icsEscape(c.county + ' REC — ' + (c.chair||''))}`,
+      `LOCATION:${icsEscape(c.meeting_location)}`,
+      `DESCRIPTION:${icsEscape('Tier '+c.tier+' · Chair: '+(c.chair||'')+' · '+(c.chair_phone||'')+'\\nWebsite: '+(c.rec_website||''))}`,
+      'END:VEVENT'
+    ].join('\r\n'));
+    recCount++;
+  });
+  if (recSkipped > 0) console.info(`ICS export: ${recCount} REC meetings parsed, ${recSkipped} skipped (no parseable cadence)`);
+
+  const ics = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//FL Sign Ops//Field Console v2.1//EN',
+    'CALSCALE:GREGORIAN',
+    ...events,
+    'END:VCALENDAR'
+  ].join('\r\n');
+
+  const blob = new Blob([ics], { type: 'text/calendar' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `field_ops_${today}.ics`;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
+  toast('Calendar downloaded');
+});
+
+// ====== TOAST ======
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+// One-time cleanup: remove stale overrides where the value is 0 (the new baseline) or shape is malformed
+(function cleanupStaleOverrides() {
+  const o = loadOverrides();
+  let changed = false;
+  for (const county of Object.keys(o)) {
+    if (!o[county] || typeof o[county] !== 'object') { delete o[county]; changed = true; continue; }
+    if (typeof o[county].yard === 'number' && o[county].yard === 0) { delete o[county].yard; changed = true; }
+    if (typeof o[county].four === 'number' && o[county].four === 0) { delete o[county].four; changed = true; }
+    if (Object.keys(o[county]).length === 0) { delete o[county]; changed = true; }
+  }
+  if (changed) saveOverrides(o);
+})();
+
+// ====== BOOT ======
+const savedTab = localStorage.getItem(TAB_KEY) || 'field';
+setTab(savedTab);
+renderList();
+recomputeTotals();
+setHeaderOffset();
+window.addEventListener('resize', setHeaderOffset);
+new ResizeObserver(setHeaderOffset).observe(document.querySelector('.app-header'));
+</script>
+</body>
+</html>
