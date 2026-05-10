@@ -25,7 +25,7 @@
     --paper-3: #e6dfcb;
     --ink: #15151a;
     --ink-2: #4a4a52;
-    --ink-3: #80808a;
+    --ink-3: #6a6a72;
     --rule: #d4cdb8;
     --rule-soft: #e6dfcb;
     --red: #a02828;
@@ -1325,12 +1325,12 @@
     <button id="open-candidate-map">Candidate Map</button>
     <button id="open-status-map">Status Map</button>
   </div>
-  <div id="map-iframe-overlay">
+  <div id="map-iframe-overlay" role="dialog" aria-modal="true" aria-labelledby="map-iframe-title" aria-hidden="true">
     <div id="map-iframe-header">
       <span id="map-iframe-title">Source Map</span>
       <button id="map-iframe-close" type="button">× Close</button>
     </div>
-    <iframe id="map-iframe" src=""></iframe>
+    <iframe id="map-iframe" src="about:blank" title="Embedded source map"></iframe>
   </div>
 </section>
 
@@ -1573,7 +1573,7 @@ function renderCard(c) {
               </span>
               <span class="lbl">4×8</span>
             </span>
-            ${(yardMod || fourMod) ? `<button type="button" class="goal-reset" data-action="reset-goals" data-county="${esc(c.county)}" aria-label="Reset ${esc(c.county)} goals to baseline" title="Reset to baseline">↺</button>` : ''}
+            ${(yardMod || fourMod) ? `<button type="button" class="goal-reset" data-action="reset-goals" data-county="${esc(c.county)}" aria-label="Clear ${esc(c.county)} goals" title="Clear goals">↺</button>` : ''}
             ${c.chair ? `<span class="meta-stat"><span class="lbl">chair</span> <b style="font-weight:500;">${esc(c.chair.split(' ').slice(-1)[0])}</b></span>` : ''}
           </div>
         </div>
@@ -1848,7 +1848,7 @@ document.getElementById('list').addEventListener('click', e => {
       saveOverrides(o);
       renderList();
       recomputeTotals();
-      showUndoToast(`Reset ${county} goals`, () => {
+      showUndoToast(`Cleared ${county} goals`, () => {
         const cur = loadOverrides();
         cur[county] = prev;
         saveOverrides(cur);
@@ -1904,10 +1904,15 @@ document.getElementById('list').addEventListener('click', e => {
 // Keyboard support for card-head (Enter / Space toggles expand)
 document.getElementById('list').addEventListener('keydown', e => {
   if (e.key !== 'Enter' && e.key !== ' ') return;
+  // Inside a focused number/text input, Space must NOT scroll the page.
+  // Number inputs don't natively consume Space, so we have to prevent it explicitly.
+  if (e.target.classList.contains('goal-input') && e.key === ' ') {
+    e.preventDefault();
+    return;
+  }
   const head = e.target.closest('[data-action="toggle"]');
   if (!head) return;
-  // Skip if user is typing in a goal input (Enter in number inputs should commit, not toggle)
-  if (e.target.classList.contains('goal-input') || e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
   if (e.target.closest('button') && e.target !== head) return;
   e.preventDefault();
   toggleCard(head.closest('.card'));
@@ -2109,16 +2114,28 @@ document.addEventListener('click', e => {
   }
 });
 
+// Remember the element that opened the overlay so we can restore focus on close
+let _mapIframeReturnFocus = null;
 function openMapIframe(src, title) {
   const iframe = document.getElementById('map-iframe');
   iframe.src = src;
   document.getElementById('map-iframe-title').textContent = title || 'Source Map';
-  document.getElementById('map-iframe-overlay').classList.add('open');
+  const overlay = document.getElementById('map-iframe-overlay');
+  overlay.classList.add('open');
+  overlay.setAttribute('aria-hidden', 'false');
+  _mapIframeReturnFocus = document.activeElement;
+  // Move focus into the overlay so screen reader announces dialog and Escape can close
+  setTimeout(() => document.getElementById('map-iframe-close').focus(), 0);
 }
 function closeMapIframe() {
-  document.getElementById('map-iframe-overlay').classList.remove('open');
-  // Use about:blank to avoid stale-content flash on next open
+  const overlay = document.getElementById('map-iframe-overlay');
+  overlay.classList.remove('open');
+  overlay.setAttribute('aria-hidden', 'true');
   document.getElementById('map-iframe').src = 'about:blank';
+  if (_mapIframeReturnFocus && typeof _mapIframeReturnFocus.focus === 'function') {
+    _mapIframeReturnFocus.focus();
+  }
+  _mapIframeReturnFocus = null;
 }
 // Escape closes iframe overlay if open
 document.addEventListener('keydown', e => {
@@ -2429,7 +2446,7 @@ document.getElementById('btn-ical').addEventListener('click', () => {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `field_ops_${today}.ics`;
+  a.download = `field_ops_${todayStr()}.ics`;
   document.body.appendChild(a);
   a.click();
   setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
